@@ -1,0 +1,1866 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<title>Nuestro Universo — Un juego de amor entre estrellas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-void:#08051a;
+    --bg-panel:#1b1240;
+    --bg-panel-2:#241a54;
+    --accent-pink:#ff6fb5;
+    --accent-pink-dim:#c94f8c;
+    --accent-cyan:#6be3ff;
+    --accent-gold:#ffd873;
+    --text-main:#f4ecff;
+    --text-dim:#a597cc;
+    --danger:#ff4d5e;
+    --success:#5be89a;
+    --border-glow: rgba(255,111,181,.45);
+    --panel-radius: 10px;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0;padding:0;
+    width:100%;height:100%;
+    background:var(--bg-void);
+    color:var(--text-main);
+    font-family:'VT323',monospace;
+    overflow:hidden;
+    -webkit-tap-highlight-color:transparent;
+    user-select:none;
+  }
+  h1,h2,h3,.pixel{font-family:'Press Start 2P',monospace;}
+
+  #starfield{
+    position:fixed;inset:0;
+    width:100%;height:100%;
+    z-index:0;
+    display:block;
+    background:radial-gradient(ellipse at 50% -10%, #241a54 0%, #08051a 60%);
+  }
+
+  #app{
+    position:relative;
+    z-index:2;
+    width:100%;
+    height:100%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+
+  .screen{
+    display:none;
+    width:100%;
+    height:100%;
+    align-items:center;
+    justify-content:center;
+    flex-direction:column;
+    padding:18px;
+    text-align:center;
+    animation:fadeIn .5s ease;
+    overflow-y:auto;
+  }
+  .screen.active{display:flex;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+
+  .stage{
+    width:min(880px,96vw);
+    max-height:94vh;
+    overflow-y:auto;
+    background:linear-gradient(180deg,var(--bg-panel) 0%, #150c33 100%);
+    border:3px solid var(--accent-pink-dim);
+    border-radius:var(--panel-radius);
+    box-shadow: 0 0 0 4px #08051a, 0 0 30px var(--border-glow), inset 0 0 40px rgba(107,227,255,.06);
+    padding:28px 22px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:14px;
+    position:relative;
+  }
+  .stage::before{
+    content:"";
+    position:absolute;inset:0;
+    background:repeating-linear-gradient(0deg, rgba(255,255,255,0.025) 0px, rgba(255,255,255,0.025) 1px, transparent 1px, transparent 3px);
+    pointer-events:none;
+  }
+
+  .title-eyebrow{
+    color:var(--accent-cyan);
+    font-size:10px;
+    letter-spacing:2px;
+    opacity:.85;
+  }
+  .title-main{
+    color:var(--accent-pink);
+    font-size:clamp(18px,4.2vw,32px);
+    text-shadow:0 0 12px var(--accent-pink), 0 0 2px #fff;
+    line-height:1.5;
+    margin:4px 0 6px;
+  }
+  .subtitle{
+    color:var(--text-dim);
+    font-size:20px;
+    max-width:560px;
+    line-height:1.35;
+  }
+
+  .story-text{
+    font-size:24px;
+    line-height:1.5;
+    color:var(--text-main);
+    max-width:600px;
+    background:rgba(0,0,0,.25);
+    border-left:3px solid var(--accent-cyan);
+    padding:14px 18px;
+    border-radius:6px;
+    text-align:left;
+  }
+
+  .char-row{
+    display:flex;
+    gap:18px;
+    align-items:flex-end;
+    justify-content:center;
+    flex-wrap:wrap;
+    margin:6px 0;
+  }
+  .char-card{
+    display:flex;flex-direction:column;align-items:center;gap:6px;
+  }
+  .char-card span{
+    font-size:14px;color:var(--text-dim);
+  }
+  .sprite{
+    image-rendering:pixelated;
+    image-rendering:crisp-edges;
+    filter:drop-shadow(0 0 8px rgba(107,227,255,.35));
+  }
+  .sprite-placeholder{
+    display:flex;align-items:center;justify-content:center;
+    background:linear-gradient(160deg,#2a1c5e,#100a2c);
+    border:2px dashed var(--accent-pink-dim);
+    border-radius:8px;
+    color:var(--text-dim);
+    font-size:10px;
+    font-family:'Press Start 2P',monospace;
+    text-align:center;
+    padding:4px;
+    line-height:1.6;
+  }
+
+  input[type=text]{
+    font-family:'VT323',monospace;
+    font-size:22px;
+    background:#100a2c;
+    border:2px solid var(--accent-cyan);
+    color:var(--text-main);
+    padding:10px 14px;
+    border-radius:6px;
+    width:min(320px,80vw);
+    text-align:center;
+    outline:none;
+  }
+  input[type=text]:focus{box-shadow:0 0 10px var(--accent-cyan);}
+
+  .btn{
+    font-family:'Press Start 2P',monospace;
+    font-size:12px;
+    color:#1a0f38;
+    background:linear-gradient(180deg,var(--accent-gold),#e0a83f);
+    border:none;
+    padding:14px 22px;
+    border-radius:8px;
+    cursor:pointer;
+    box-shadow:0 4px 0 #8c6320, 0 0 16px rgba(255,216,115,.35);
+    transition:transform .08s ease;
+    letter-spacing:.5px;
+  }
+  .btn:active{transform:translateY(3px);box-shadow:0 1px 0 #8c6320;}
+  .btn.secondary{
+    background:linear-gradient(180deg,#3a2b74,#241a54);
+    color:var(--text-main);
+    box-shadow:0 4px 0 #150c33, 0 0 10px rgba(107,227,255,.2);
+  }
+  .btn.danger{
+    background:linear-gradient(180deg,#ff7d8a,var(--danger));
+    color:#2a0008;
+    box-shadow:0 4px 0 #8a1420;
+  }
+  .btn:disabled{opacity:.4;cursor:not-allowed;}
+
+  .btn-row{
+    display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:6px;
+  }
+
+  /* selección de niveles */
+  .level-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+    gap:14px;
+    width:100%;
+    max-width:720px;
+    margin:6px 0;
+  }
+  .level-card{
+    background:var(--bg-panel-2);
+    border:2px solid var(--accent-pink-dim);
+    border-radius:10px;
+    padding:14px;
+    cursor:pointer;
+    text-align:left;
+    transition:transform .15s ease, border-color .15s ease;
+    position:relative;
+  }
+  .level-card:hover{transform:translateY(-3px);border-color:var(--accent-cyan);}
+  .level-card .num{font-family:'Press Start 2P',monospace;font-size:10px;color:var(--accent-gold);}
+  .level-card h4{margin:8px 0 4px;font-size:12px;font-family:'Press Start 2P',monospace;color:var(--text-main);line-height:1.4;}
+  .level-card p{font-size:15px;color:var(--text-dim);margin:0;}
+  .level-card .badge{position:absolute;top:10px;right:12px;color:var(--success);font-size:20px;}
+  .level-card.locked{opacity:.45;cursor:not-allowed;pointer-events:none;}
+  .level-card.final{border-color:var(--accent-gold);background:linear-gradient(160deg,#2a1c5e,#150c33);}
+  .link-btn{
+    background:none;border:none;color:var(--accent-cyan);
+    font-family:'VT323',monospace;font-size:16px;text-decoration:underline;
+    cursor:pointer;
+  }
+
+  /* HUD */
+  .hud{
+    position:absolute;
+    top:10px;left:10px;right:10px;
+    display:flex;justify-content:space-between;align-items:center;
+    gap:6px;
+    z-index:5;
+    pointer-events:none;
+    flex-wrap:wrap;
+  }
+  .hearts{display:flex;gap:4px;pointer-events:none;}
+  .heart{
+    width:20px;height:18px;
+    background:var(--danger);
+    clip-path:polygon(50% 15%,61% 5%,75% 5%,88% 15%,88% 32%,50% 68%,12% 32%,12% 15%,25% 5%,39% 5%);
+    filter:drop-shadow(0 0 4px var(--danger));
+  }
+  .heart.lost{background:#3a2440;filter:none;}
+  .menu-btn{
+    pointer-events:all;
+    font-family:'Press Start 2P',monospace;
+    font-size:10px;
+    background:rgba(20,12,45,.85);
+    border:1px solid var(--accent-cyan);
+    color:var(--accent-cyan);
+    padding:8px 10px;
+    border-radius:6px;
+    cursor:pointer;
+  }
+  .level-label{
+    pointer-events:none;
+    font-size:10px;
+    color:var(--accent-gold);
+    background:rgba(20,12,45,.85);
+    border:1px solid var(--accent-gold);
+    padding:6px 8px;
+    border-radius:6px;
+  }
+
+  /* canvas game screens */
+  .game-wrap{
+    position:relative;
+    width:min(880px,96vw);
+    height:min(460px,60vh);
+    border:3px solid var(--accent-pink-dim);
+    border-radius:var(--panel-radius);
+    background:#0d0826;
+    box-shadow:0 0 0 4px #08051a, 0 0 30px var(--border-glow);
+    overflow:hidden;
+  }
+  canvas{display:block;width:100%;height:100%;}
+
+  .touch-controls{
+    position:absolute;bottom:10px;left:0;right:0;
+    display:flex;justify-content:center;gap:14px;
+    z-index:6;
+  }
+  .touch-controls.hidden{display:none;}
+  .tbtn{
+    width:64px;height:64px;
+    border-radius:50%;
+    background:rgba(107,227,255,.16);
+    border:2px solid var(--accent-cyan);
+    color:var(--accent-cyan);
+    font-family:'Press Start 2P',monospace;
+    font-size:10px;
+    display:flex;align-items:center;justify-content:center;
+    -webkit-user-select:none;
+  }
+
+  .dpad{
+    position:absolute;bottom:14px;left:14px;
+    display:grid;
+    grid-template-columns:44px 44px 44px;
+    grid-template-rows:44px 44px 44px;
+    gap:3px;
+    z-index:6;
+  }
+  .dpad button{
+    background:rgba(107,227,255,.16);
+    border:1px solid var(--accent-cyan);
+    color:var(--accent-cyan);
+    border-radius:6px;
+    font-size:16px;
+  }
+
+  /* word game (nivel 2) */
+  .word-display{
+    font-family:'Press Start 2P',monospace;
+    font-size:clamp(16px,4vw,26px);
+    letter-spacing:10px;
+    color:var(--text-main);
+    margin:14px 0;
+    word-break:break-all;
+  }
+  .keyboard{
+    display:flex;flex-wrap:wrap;
+    gap:6px;justify-content:center;
+    max-width:560px;
+  }
+  .key{
+    font-family:'Press Start 2P',monospace;
+    font-size:12px;
+    width:34px;height:38px;
+    background:var(--bg-panel-2);
+    border:1px solid var(--accent-cyan);
+    color:var(--text-main);
+    border-radius:5px;
+    cursor:pointer;
+  }
+  .key:disabled{opacity:.25;cursor:default;}
+  .key.correct{background:var(--success);color:#08051a;}
+  .key.wrong{background:var(--danger);color:#08051a;}
+
+  .ghost-meter{
+    position:relative;
+    width:100%;max-width:560px;
+    height:14px;
+    background:#150c33;
+    border-radius:8px;
+    overflow:hidden;
+    border:1px solid var(--accent-pink-dim);
+    margin:4px 0 10px;
+  }
+  .ghost-meter-fill{
+    height:100%;
+    background:linear-gradient(90deg,var(--accent-cyan),var(--danger));
+    width:0%;
+    transition:width .4s ease;
+  }
+
+  /* nivel 4: completa la palabra */
+  .clue-progress{font-size:14px;color:var(--text-dim);}
+  .answer-row{display:flex;gap:10px;justify-content:center;align-items:center;flex-wrap:wrap;}
+  @keyframes shake{
+    10%,90%{transform:translateX(-2px);} 20%,80%{transform:translateX(4px);}
+    30%,50%,70%{transform:translateX(-8px);} 40%,60%{transform:translateX(8px);}
+  }
+  .shake{animation:shake .4s;}
+
+  /* nivel 5: memoria */
+  .mem-grid{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:10px;
+    max-width:380px;
+    margin:8px auto;
+  }
+  .mem-card{
+    aspect-ratio:1/1;
+    font-size:26px;
+    background:var(--bg-panel-2);
+    border:2px solid var(--accent-cyan);
+    border-radius:8px;
+    color:var(--text-main);
+    display:flex;align-items:center;justify-content:center;
+    cursor:pointer;
+  }
+  .mem-card.matched{border-color:var(--success);opacity:.5;cursor:default;}
+  .mem-card.flipped{background:#2a1c5e;}
+
+  /* overlays */
+  .overlay{
+    position:absolute;inset:0;
+    background:rgba(4,2,16,.88);
+    display:none;
+    align-items:center;justify-content:center;
+    z-index:20;
+    border-radius:var(--panel-radius);
+    overflow-y:auto;
+  }
+  .overlay.active{display:flex;}
+  .overlay-card{
+    background:var(--bg-panel);
+    border:3px solid var(--danger);
+    border-radius:10px;
+    padding:26px 22px;
+    max-width:420px;
+    text-align:center;
+    box-shadow:0 0 24px rgba(255,77,94,.4);
+    margin:auto;
+  }
+  .overlay-card.win{
+    border-color:var(--success);
+    box-shadow:0 0 24px rgba(91,232,154,.4);
+  }
+  .overlay-card h3{
+    font-size:16px;color:var(--danger);margin-bottom:12px;
+  }
+  .overlay-card.win h3{color:var(--success);}
+  .overlay-card p{font-size:20px;color:var(--text-dim);margin:8px 0 16px;}
+
+  .pause-overlay{
+    position:absolute;inset:0;
+    background:rgba(4,2,16,.92);
+    display:none;
+    align-items:center;justify-content:center;
+    z-index:25;
+  }
+  .pause-overlay.active{display:flex;}
+
+  footer.credits{
+    position:fixed;bottom:6px;left:0;right:0;
+    text-align:center;
+    font-size:11px;
+    color:#4a3d78;
+    z-index:3;
+    pointer-events:none;
+  }
+
+  @media (max-width:600px){
+    .story-text{font-size:19px;}
+    .stage{padding:20px 14px;}
+    .char-card img,.char-card .sprite-placeholder{width:70px;height:96px;}
+  }
+</style>
+</head>
+<body>
+
+<canvas id="starfield"></canvas>
+
+<div id="app">
+
+  <!-- ===================== PANTALLA 0: INICIO ===================== -->
+  <section class="screen active" id="screen-start">
+    <div class="stage">
+      <div class="title-eyebrow">✦ UNA HISTORIA ENTRE FOTOGRAMAS Y ESTRELLAS ✦</div>
+      <h1 class="title-main">NUESTRO<br>UNIVERSO</h1>
+      <p class="subtitle">Un fantasma del pasado la persigue entre las estrellas.
+      Ayúdala a escapar, resolver los enigmas del cielo y volver a los brazos de quien la espera.</p>
+
+      <div class="char-row">
+        <div class="char-card">
+          <img class="sprite" src="img/itz_trajeCapucha.png" alt="Itz" width="76" height="104"
+               onerror="this.replaceWith(placeholderSprite('ITZ_TRAJECAPUCHA',76,104))">
+          <span>La protagonista</span>
+        </div>
+        <div class="char-card">
+          <img class="sprite" src="img/gerver_pixel.png" alt="Gerver" width="76" height="104"
+               onerror="this.replaceWith(placeholderSprite('GERVER_PIXEL',76,104))">
+          <span>Su destino</span>
+        </div>
+        <div class="char-card">
+          <img class="sprite" src="img/gerver_fantasma.png" alt="Fantasma" width="76" height="104"
+               onerror="this.replaceWith(placeholderSprite('GERVER_FANTASMA',76,104))">
+          <span>La sombra que la sigue</span>
+        </div>
+      </div>
+
+      <input type="text" id="playerNameInput" maxlength="16" placeholder="Escribe tu nombre...">
+      <div class="btn-row">
+        <button class="btn" id="btnStartAdventure">✦ ELEGIR NIVEL ✦</button>
+      </div>
+      <p style="font-size:14px;color:#5c4f8a;">Usa ␣ / ↑ para saltar, ↓ para esquivar, y las flechas para moverte en los laberintos.</p>
+    </div>
+  </section>
+
+  <!-- ===================== SELECCIÓN DE NIVELES ===================== -->
+  <section class="screen" id="screen-level-select">
+    <div class="stage">
+      <div class="title-eyebrow">✦ MAPA DE ESTRELLAS ✦</div>
+      <h2 class="title-main" style="font-size:22px;">ELIGE TU CAMINO</h2>
+      <p class="subtitle" id="levelSelectGreeting"></p>
+      <div class="level-grid" id="levelGrid"></div>
+      <div class="level-card final" id="finalCard" style="max-width:400px;">
+        <div class="num">✦ EPÍLOGO</div>
+        <h4>EL REENCUENTRO</h4>
+        <p id="finalCardText">Completa los 6 niveles para desbloquear el final.</p>
+        <span class="badge" id="finalBadge" style="display:none;">🔓</span>
+      </div>
+      <button class="link-btn" id="btnChangeName">◂ Cambiar nombre</button>
+    </div>
+  </section>
+
+  <!-- ===================== PRESENTACIÓN NIVEL 1 ===================== -->
+  <section class="screen" id="screen-story1">
+    <div class="stage">
+      <div class="title-eyebrow">NIVEL 1</div>
+      <h2 class="title-main" style="font-size:20px;">EL ESCAPE</h2>
+      <div class="char-row">
+        <div class="char-card">
+          <img class="sprite" src="img/itz_trajeCapucha.png" alt="Itz" width="90" height="120"
+               onerror="this.replaceWith(placeholderSprite('ITZ_TRAJECAPUCHA',90,120))">
+        </div>
+        <div class="char-card">
+          <img class="sprite" src="img/gerver_fantasma.png" alt="Fantasma" width="90" height="120"
+               onerror="this.replaceWith(placeholderSprite('GERVER_FANTASMA',90,120))">
+        </div>
+      </div>
+      <p class="story-text" id="story1Text">El fantasma ha despertado entre las estrellas caídas. Itz debe correr, saltar los cráteres y esquivar los restos de cometas antes de que la alcance la oscuridad. Mientras más resista, más rápido se vuelve la persecución... este nivel es infinito.</p>
+      <p style="font-size:15px;color:var(--accent-gold);" id="bestDistanceText1"></p>
+      <div class="btn-row">
+        <button class="btn secondary" id="btnBackHome1">◂ Niveles</button>
+        <button class="btn" id="btnStartLevel1">START</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== NIVEL 1: RUNNER ===================== -->
+  <section class="screen" id="screen-level1">
+    <div class="game-wrap" id="gw1">
+      <div class="hud">
+        <div class="level-label">NIVEL 1 · EL ESCAPE</div>
+        <div class="hearts" id="hearts1"></div>
+        <button class="menu-btn" id="btnAdvanceLevel1" style="display:none;">NIVEL 2 ▸</button>
+        <button class="menu-btn" id="btnPause1">☰ MENÚ</button>
+      </div>
+      <canvas id="canvasLevel1"></canvas>
+      <div class="touch-controls" id="touch1">
+        <div class="tbtn" id="tbtnJump">SALTAR</div>
+        <div class="tbtn" id="tbtnDuck">ESQUIVAR</div>
+      </div>
+
+      <div class="pause-overlay" id="pauseOverlay1">
+        <div class="overlay-card">
+          <h3 style="color:var(--accent-cyan)">JUEGO EN PAUSA</h3>
+          <div class="btn-row" style="flex-direction:column;">
+            <button class="btn" id="btnResume1">Continuar jugando</button>
+            <button class="btn secondary" id="btnRestartLevel1">Reiniciar nivel</button>
+            <button class="btn secondary" id="btnExitLevel1">Salir del nivel</button>
+            <button class="btn danger" id="btnHomeFromPause1">Volver a niveles</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="overlay" id="loseOverlay1">
+        <div class="overlay-card">
+          <h3 id="loseTitle1">PERDISTE</h3>
+          <p id="loseText1"></p>
+          <div class="btn-row" style="flex-direction:column;">
+            <button class="btn" id="btnRetry1">Continuar jugando</button>
+            <button class="btn secondary" id="btnExitToStory1">Salir del nivel</button>
+            <button class="btn danger" id="btnHomeFromLose1">Volver a niveles</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="overlay" id="winOverlay1">
+        <div class="overlay-card win">
+          <h3>¡LO LOGRASTE!</h3>
+          <p>Escapaste del fantasma... por ahora.</p>
+          <div class="btn-row">
+            <button class="btn" id="btnToStory2">Siguiente nivel ▸</button>
+            <button class="btn secondary" id="btnLevel1ToSelect">Volver a niveles</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== PRESENTACIÓN NIVEL 2 ===================== -->
+  <section class="screen" id="screen-story2">
+    <div class="stage">
+      <div class="title-eyebrow">NIVEL 2</div>
+      <h2 class="title-main" style="font-size:20px;">PALABRAS DE ESTRELLAS</h2>
+      <div class="char-row">
+        <div class="char-card">
+          <img class="sprite" src="img/itz_trajeNegro.png" alt="Itz" width="90" height="120"
+               onerror="this.replaceWith(placeholderSprite('ITZ_TRAJENEGRO',90,120))">
+        </div>
+      </div>
+      <p class="story-text">Para seguir avanzando, el cielo le exige recordar las palabras que los unieron. Adivina cada palabra, letra por letra, antes de quedarte sin corazones.</p>
+      <div class="btn-row">
+        <button class="btn secondary" id="btnBackHome2">◂ Niveles</button>
+        <button class="btn" id="btnStartLevel2">START</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== NIVEL 2: ADIVINA LA PALABRA ===================== -->
+  <section class="screen" id="screen-level2">
+    <div class="stage" style="position:relative;">
+      <div class="hud" style="position:absolute;">
+        <div class="level-label">NIVEL 2 · PALABRAS</div>
+        <div class="hearts" id="hearts2"></div>
+        <button class="menu-btn" id="btnPause2">☰ MENÚ</button>
+      </div>
+      <div style="height:26px;"></div>
+      <img class="sprite" id="ghostWordSprite" src="img/gerver_fantasma.png" width="70" height="90"
+           style="opacity:.5;transition:transform .4s ease;"
+           onerror="this.replaceWith(placeholderSprite('GERVER_FANTASMA',70,90))">
+      <div class="ghost-meter"><div class="ghost-meter-fill" id="ghostMeter2"></div></div>
+      <div class="word-display" id="wordDisplay2">_ _ _ _</div>
+      <div class="keyboard" id="keyboard2"></div>
+
+      <div class="pause-overlay" id="pauseOverlay2">
+        <div class="overlay-card">
+          <h3 style="color:var(--accent-cyan)">JUEGO EN PAUSA</h3>
+          <div class="btn-row" style="flex-direction:column;">
+            <button class="btn" id="btnResume2">Continuar jugando</button>
+            <button class="btn secondary" id="btnRestartLevel2">Reiniciar nivel</button>
+            <button class="btn secondary" id="btnExitLevel2">Salir del nivel</button>
+            <button class="btn danger" id="btnHomeFromPause2">Volver a niveles</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="overlay" id="loseOverlay2">
+        <div class="overlay-card">
+          <h3 id="loseTitle2">PERDISTE</h3>
+          <p id="loseText2"></p>
+          <div class="btn-row" style="flex-direction:column;">
+            <button class="btn" id="btnRetry2">Continuar jugando</button>
+            <button class="btn secondary" id="btnExitToStory2">Salir del nivel</button>
+            <button class="btn danger" id="btnHomeFromLose2">Volver a niveles</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="overlay" id="winOverlay2">
+        <div class="overlay-card win">
+          <h3>¡LO RECORDASTE!</h3>
+          <p>Las palabras aún tienen poder sobre las estrellas.</p>
+          <div class="btn-row">
+            <button class="btn" id="btnToStory3">Siguiente nivel ▸</button>
+            <button class="btn secondary" id="btnLevel2ToSelect">Volver a niveles</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== PRESENTACIÓN NIVEL 3 ===================== -->
+  <section class="screen" id="screen-story3">
+    <div class="stage">
+      <div class="title-eyebrow">NIVEL 3</div>
+      <h2 class="title-main" style="font-size:20px;">EL LABERINTO DE ESTRELLAS</h2>
+      <div class="char-row">
+        <div class="char-card">
+          <img class="sprite" src="img/itz_trajeNegro.png" alt="Itz" width="80" height="106"
+               onerror="this.replaceWith(placeholderSprite('ITZ_TRAJENEGRO',80,106))">
+        </div>
+        <div class="char-card">
+          <img class="sprite" src="img/gerver_pixel.png" alt="Gerver" width="80" height="106"
+               onerror="this.replaceWith(placeholderSprite('GERVER_PIXEL',80,106))">
+        </div>
+      </div>
+      <p class="story-text">Un laberinto de constelaciones separa a Itz de Gerver. El fantasma también conoce el camino... encuéntralo antes de que él la encuentre a ella.</p>
+      <div class="btn-row">
+        <button class="btn secondary" id="btnBackHome3">◂ Niveles</button>
+        <button class="btn" id="btnStartLevel3">START</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== NIVEL 3: LABERINTO ===================== -->
+  <section class="screen" id="screen-level3">
+    <div class="game-wrap" id="gw3">
+      <div class="hud">
+        <div class="level-label">NIVEL 3 · LABERINTO</div>
+        <div style="font-size:10px;color:var(--accent-gold);font-family:'Press Start 2P';">ENCUENTRA A GERVER</div>
+        <button class="menu-btn" id="btnPause3">☰ MENÚ</button>
+      </div>
+      <canvas id="canvasLevel3"></canvas>
+      <div class="dpad" id="dpad3">
+        <div></div><button data-dir="up">▲</button><div></div>
+        <button data-dir="left">◀</button><div></div><button data-dir="right">▶</button>
+        <div></div><button data-dir="down">▼</button><div></div>
+      </div>
+
+      <div class="pause-overlay" id="pauseOverlay3">
+        <div class="overlay-card">
+          <h3 style="color:var(--accent-cyan)">JUEGO EN PAUSA</h3>
+          <div class="btn-row" style="flex-direction:column;">
+            <button class="btn" id="btnResume3">Continuar jugando</button>
+            <button class="btn secondary" id="btnRestartLevel3">Reiniciar nivel</button>
+            <button class="btn secondary" id="btnExitLevel3">Salir del nivel</button>
+            <button class="btn danger" id="btnHomeFromPause3">Volver a niveles</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="overlay" id="loseOverlay3">
+        <div class="overlay-card">
+          <h3 id="loseTitle3">PERDISTE</h3>
+          <p id="loseText3"></p>
+          <div class="btn-row" style="flex-direction:column;">
+            <button class="btn" id="btnRetry3">Continuar jugando</button>
+            <button class="btn secondary" id="btnExitToStory3">Salir del nivel</button>
+            <button class="btn danger" id="btnHomeFromLose3">Volver a niveles</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="overlay" id="winOverlay3">
+        <div class="overlay-card win">
+          <h3>¡LA ENCONTRASTE!</h3>
+          <p>El camino sigue abriéndose entre las estrellas.</p>
+          <div class="btn-row">
+            <button class="btn" id="btnToStory4">Siguiente nivel ▸</button>
+            <button class="btn secondary" id="btnLevel3ToSelect">Volver a niveles</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== PRESENTACIÓN NIVEL 4 ===================== -->
+  <section class="screen" id="screen-story4">
+    <div class="stage">
+      <div class="title-eyebrow">NIVEL 4</div>
+      <h2 class="title-main" style="font-size:20px;">COMPLETA LA PALABRA</h2>
+      <div class="char-row">
+        <div class="char-card">
+          <img class="sprite" src="img/itz_trajeCapucha.png" alt="Itz" width="80" height="106"
+               onerror="this.replaceWith(placeholderSprite('ITZ_TRAJECAPUCHA',80,106))">
+        </div>
+      </div>
+      <p class="story-text">El cielo susurra pistas. Lee cada una y escribe la palabra exacta que esconde antes de que se te acaben los corazones.</p>
+      <div class="btn-row">
+        <button class="btn secondary" id="btnBackHome4">◂ Niveles</button>
+        <button class="btn" id="btnStartLevel4">START</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== NIVEL 4: COMPLETA LA PALABRA ===================== -->
+  <section class="screen" id="screen-level4">
+    <div class="stage" style="position:relative;">
+      <div class="hud" style="position:absolute;">
+        <div class="level-label">NIVEL 4 · PISTAS</div>
+        <div class="hearts" id="hearts4"></div>
+        <button class="menu-btn" id="btnPause4">☰ MENÚ</button>
+      </div>
+      <div style="height:26px;"></div>
+      <p class="clue-progress" id="progressText4">Palabra 1 de 5</p>
+      <p class="story-text" id="clueText4">Pista...</p>
+      <div class="answer-row">
+        <input type="text" id="answerInput4" maxlength="16" placeholder="Escribe la palabra...">
+        <button class="btn" id="btnSubmit4">Comprobar</button>
+      </div>
+
+      <div class="pause-overlay" id="pauseOverlay4">
+        <div class="overlay-card">
+          <h3 style="color:var(--accent-cyan)">JUEGO EN PAUSA</h3>
+          <div class="btn-row" style="flex-direction:column;">
+            <button class="btn" id="btnResume4">Continuar jugando</button>
+            <button class="btn secondary" id="btnRestartLevel4">Reiniciar nivel</button>
+            <button class="btn secondary" id="btnExitLevel4">Salir del nivel</button>
+            <button class="btn danger" id="btnHomeFromPause4">Volver a niveles</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="overlay" id="loseOverlay4">
+        <div class="overlay-card">
+          <h3 id="loseTitle4">PERDISTE</h3>
+          <p id="loseText4"></p>
+          <div class="btn-row" style="flex-direction:column;">
+            <button class="btn" id="btnRetry4">Continuar jugando</button>
+            <button class="btn secondary" id="btnExitToStory4">Salir del nivel</button>
+            <button class="btn danger" id="btnHomeFromLose4">Volver a niveles</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="overlay" id="winOverlay4">
+        <div class="overlay-card win">
+          <h3>¡LO DESCIFRASTE!</h3>
+          <p>Cada palabra las acerca un poco más.</p>
+          <div class="btn-row">
+            <button class="btn" id="btnToStory5">Siguiente nivel ▸</button>
+            <button class="btn secondary" id="btnLevel4ToSelect">Volver a niveles</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== PRESENTACIÓN NIVEL 5 ===================== -->
+  <section class="screen" id="screen-story5">
+    <div class="stage">
+      <div class="title-eyebrow">NIVEL 5</div>
+      <h2 class="title-main" style="font-size:20px;">MEMORIA DE ESTRELLAS</h2>
+      <div class="char-row">
+        <div class="char-card">
+          <img class="sprite" src="img/itz_trajeNegro.png" alt="Itz" width="80" height="106"
+               onerror="this.replaceWith(placeholderSprite('ITZ_TRAJENEGRO',80,106))">
+        </div>
+      </div>
+      <p class="story-text">Las constelaciones se han mezclado. Encuentra todos los pares antes de que el fantasma alcance el reloj de arena.</p>
+      <div class="btn-row">
+        <button class="btn secondary" id="btnBackHome5">◂ Niveles</button>
+        <button class="btn" id="btnStartLevel5">START</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== NIVEL 5: MEMORIA ===================== -->
+  <section class="screen" id="screen-level5">
+    <div class="stage" style="position:relative;">
+      <div class="hud" style="position:absolute;">
+        <div class="level-label">NIVEL 5 · MEMORIA</div>
+        <div style="font-size:10px;color:var(--accent-gold);font-family:'Press Start 2P';" id="memPairsText">0/6 PARES</div>
+        <button class="menu-btn" id="btnPause5">☰ MENÚ</button>
+      </div>
+      <div style="height:26px;"></div>
+      <img class="sprite" id="ghostMemSprite" src="img/gerver_fantasma.png" width="60" height="78"
+           style="opacity:.4;transition:transform .4s ease;"
+           onerror="this.replaceWith(placeholderSprite('GERVER_FANTASMA',60,78))">
+      <div class="ghost-meter"><div class="ghost-meter-fill" id="timeMeter5"></div></div>
+      <div class="mem-grid" id="memoryGrid"></div>
+
+      <div class="pause-overlay" id="pauseOverlay5">
+        <div class="overlay-card">
+          <h3 style="color:var(--accent-cyan)">JUEGO EN PAUSA</h3>
+          <div class="btn-row" style="flex-direction:column;">
+            <button class="btn" id="btnResume5">Continuar jugando</button>
+            <button class="btn secondary" id="btnRestartLevel5">Reiniciar nivel</button>
+            <button class="btn secondary" id="btnExitLevel5">Salir del nivel</button>
+            <button class="btn danger" id="btnHomeFromPause5">Volver a niveles</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="overlay" id="loseOverlay5">
+        <div class="overlay-card">
+          <h3 id="loseTitle5">SE ACABÓ EL TIEMPO</h3>
+          <p id="loseText5"></p>
+          <div class="btn-row" style="flex-direction:column;">
+            <button class="btn" id="btnRetry5">Continuar jugando</button>
+            <button class="btn secondary" id="btnExitToStory5">Salir del nivel</button>
+            <button class="btn danger" id="btnHomeFromLose5">Volver a niveles</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="overlay" id="winOverlay5">
+        <div class="overlay-card win">
+          <h3>¡MEMORIA PERFECTA!</h3>
+          <p>Ningún recuerdo de ustedes dos se perdió.</p>
+          <div class="btn-row">
+            <button class="btn" id="btnToStory6">Siguiente nivel ▸</button>
+            <button class="btn secondary" id="btnLevel5ToSelect">Volver a niveles</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== PRESENTACIÓN NIVEL 6 ===================== -->
+  <section class="screen" id="screen-story6">
+    <div class="stage">
+      <div class="title-eyebrow">NIVEL 6</div>
+      <h2 class="title-main" style="font-size:20px;">LABERINTO NOCTURNO</h2>
+      <div class="char-row">
+        <div class="char-card">
+          <img class="sprite" src="img/itz_trajeNegro.png" alt="Itz" width="80" height="106"
+               onerror="this.replaceWith(placeholderSprite('ITZ_TRAJENEGRO',80,106))">
+        </div>
+        <div class="char-card">
+          <img class="sprite" src="img/gerver_pixel.png" alt="Gerver" width="80" height="106"
+               onerror="this.replaceWith(placeholderSprite('GERVER_PIXEL',80,106))">
+        </div>
+      </div>
+      <p class="story-text">La noche final. El laberinto es más grande y el fantasma no descansa. Este es el último paso antes del reencuentro.</p>
+      <div class="btn-row">
+        <button class="btn secondary" id="btnBackHome6">◂ Niveles</button>
+        <button class="btn" id="btnStartLevel6">START</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== NIVEL 6: LABERINTO NOCTURNO ===================== -->
+  <section class="screen" id="screen-level6">
+    <div class="game-wrap" id="gw6">
+      <div class="hud">
+        <div class="level-label">NIVEL 6 · NOCTURNO</div>
+        <div style="font-size:10px;color:var(--accent-gold);font-family:'Press Start 2P';">EL FANTASMA ES MÁS RÁPIDO</div>
+        <button class="menu-btn" id="btnPause6">☰ MENÚ</button>
+      </div>
+      <canvas id="canvasLevel6"></canvas>
+      <div class="dpad" id="dpad6">
+        <div></div><button data-dir="up">▲</button><div></div>
+        <button data-dir="left">◀</button><div></div><button data-dir="right">▶</button>
+        <div></div><button data-dir="down">▼</button><div></div>
+      </div>
+
+      <div class="pause-overlay" id="pauseOverlay6">
+        <div class="overlay-card">
+          <h3 style="color:var(--accent-cyan)">JUEGO EN PAUSA</h3>
+          <div class="btn-row" style="flex-direction:column;">
+            <button class="btn" id="btnResume6">Continuar jugando</button>
+            <button class="btn secondary" id="btnRestartLevel6">Reiniciar nivel</button>
+            <button class="btn secondary" id="btnExitLevel6">Salir del nivel</button>
+            <button class="btn danger" id="btnHomeFromPause6">Volver a niveles</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="overlay" id="loseOverlay6">
+        <div class="overlay-card">
+          <h3 id="loseTitle6">PERDISTE</h3>
+          <p id="loseText6"></p>
+          <div class="btn-row" style="flex-direction:column;">
+            <button class="btn" id="btnRetry6">Continuar jugando</button>
+            <button class="btn secondary" id="btnExitToStory6">Salir del nivel</button>
+            <button class="btn danger" id="btnHomeFromLose6">Volver a niveles</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="overlay" id="winOverlay6">
+        <div class="overlay-card win">
+          <h3>¡LO LOGRASTE!</h3>
+          <p id="winText6">El camino a casa por fin se abre entre las estrellas.</p>
+          <div class="btn-row">
+            <button class="btn" id="btnToVictory">Ver el final ▸</button>
+            <button class="btn secondary" id="btnLevel6ToSelect">Volver a niveles</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== FINAL ===================== -->
+  <section class="screen" id="screen-victory">
+    <div class="stage">
+      <div class="title-eyebrow">✦ FIN DEL VIAJE ✦</div>
+      <img class="sprite" src="img/abrazados.png" alt="Reencuentro" width="220" height="220"
+           style="border-radius:10px;"
+           onerror="this.replaceWith(placeholderSprite('ABRAZADOS',220,220))">
+      <h2 class="title-main" style="font-size:22px;">SE ENCONTRARON<br>ENTRE LAS ESTRELLAS</h2>
+      <p class="story-text" id="victoryText">El fantasma se disolvió en la noche. Itz corrió hasta los brazos de Gerver, y el universo entero pareció detenerse un instante para ellos.</p>
+      <div class="btn-row">
+        <button class="btn" id="btnPlayAgain">✦ Jugar de nuevo ✦</button>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<footer class="credits">Nuestro Universo — hecho con ✦ para ti</footer>
+
+<script>
+/* =========================================================================
+   NUESTRO UNIVERSO — motor del juego (6 niveles seleccionables)
+   -------------------------------------------------------------------------
+   NOMBRES DE IMAGEN QUE DEBES SUBIR (carpeta "img/" junto a este archivo):
+     img/abrazados.png            -> la pareja abrazada (pantalla final)
+     img/itz_trajeCapucha.png     -> chica con capucha (inicio, nivel 1 y 4)
+     img/itz_trajeNegro.png       -> chica traje negro (niveles 2, 3, 5 y 6)
+     img/gerver_pixel.png         -> chico (inicio, niveles 3 y 6)
+     img/gerver_fantasma.png      -> fantasma (niveles 1, 2, 5 y 6)
+     img/itz_trajeCapucha_run1.png .. run4.png -> 4 fotogramas de la chica
+        corriendo para el nivel 1 (animación). Si no existen, se usa
+        itz_trajeCapucha.png como respaldo automáticamente.
+   Si una imagen no existe todavía, se muestra un marcador de posición
+   pixel-art con el nombre del archivo esperado, así puedes jugar y
+   probarlo TODO antes de tener el arte final.
+   ========================================================================= */
+
+// ---------- utilidades ----------
+function placeholderSprite(label,w,h){
+  const div = document.createElement('div');
+  div.className='sprite-placeholder';
+  div.style.width=w+'px';
+  div.style.height=h+'px';
+  div.textContent=label;
+  return div;
+}
+
+function el(id){return document.getElementById(id);}
+function shuffleArr(arr){
+  const a=[...arr];
+  for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+  return a;
+}
+
+const state = {
+  playerName: localStorage.getItem('nu_playerName') || '',
+};
+
+// ---------- progreso de niveles ----------
+function getCompleted(){
+  try{ return JSON.parse(localStorage.getItem('nu_completed')||'[]'); }catch(e){ return []; }
+}
+function markCompleted(id){
+  const done = getCompleted();
+  if(!done.includes(id)){ done.push(id); localStorage.setItem('nu_completed', JSON.stringify(done)); }
+  renderLevelSelect();
+}
+function isAllCompleted(){
+  return [1,2,3,4,5,6].every(id=>getCompleted().includes(id));
+}
+
+const LEVELS_META = [
+  {id:1, title:'EL ESCAPE',              desc:'Corre y esquiva al fantasma (infinito)', story:'screen-story1'},
+  {id:2, title:'PALABRAS DE ESTRELLAS',  desc:'Adivina la palabra letra por letra',     story:'screen-story2'},
+  {id:3, title:'EL LABERINTO',           desc:'Encuentra a Gerver antes que el fantasma', story:'screen-story3'},
+  {id:4, title:'COMPLETA LA PALABRA',    desc:'Descifra las pistas del corazón',        story:'screen-story4'},
+  {id:5, title:'MEMORIA DE ESTRELLAS',   desc:'Encuentra los pares contra el tiempo',   story:'screen-story5'},
+  {id:6, title:'LABERINTO NOCTURNO',     desc:'El desafío final, más grande y rápido',  story:'screen-story6'},
+];
+
+function renderLevelSelect(){
+  const done = getCompleted();
+  const grid = el('levelGrid');
+  grid.innerHTML='';
+  LEVELS_META.forEach(meta=>{
+    const card = document.createElement('div');
+    card.className='level-card';
+    card.innerHTML = `
+      <div class="num">NIVEL ${meta.id}</div>
+      <h4>${meta.title}</h4>
+      <p>${meta.desc}</p>
+      ${done.includes(meta.id) ? '<span class="badge">✓</span>' : ''}
+    `;
+    card.addEventListener('click', ()=>{
+      if(meta.id===1) updateBestDistanceDisplay();
+      showScreen(meta.story);
+    });
+    grid.appendChild(card);
+  });
+
+  const finalCard = el('finalCard');
+  const allDone = isAllCompleted();
+  finalCard.classList.toggle('locked', !allDone);
+  el('finalBadge').style.display = allDone ? 'inline' : 'none';
+  el('finalCardText').textContent = allDone
+    ? 'Todos los niveles completos. El universo por fin los reúne.'
+    : `Completa los 6 niveles para desbloquear el final. (${done.length}/6)`;
+  el('levelSelectGreeting').textContent = `Elige tu camino, ${state.playerName || 'viajera'}.`;
+}
+el('finalCard').addEventListener('click', ()=>{
+  if(!isAllCompleted()) return;
+  el('victoryText').textContent = `El fantasma se disolvió en la noche. ${state.playerName} corrió hasta los brazos de Gerver, y el universo entero pareció detenerse un instante para ellos.`;
+  showScreen('screen-victory');
+});
+el('btnChangeName').addEventListener('click', ()=>showScreen('screen-start'));
+
+// ---------- fondo estrellado ----------
+(function starfield(){
+  const canvas = el('starfield');
+  const ctx = canvas.getContext('2d');
+  let w,h,stars=[];
+  function resize(){
+    w = canvas.width = window.innerWidth;
+    h = canvas.height = window.innerHeight;
+    stars = [];
+    const count = Math.floor((w*h)/6000);
+    for(let i=0;i<count;i++){
+      stars.push({
+        x:Math.random()*w, y:Math.random()*h,
+        r:Math.random()*1.6+0.3,
+        phase:Math.random()*Math.PI*2,
+        speed:Math.random()*0.4+0.05
+      });
+    }
+  }
+  window.addEventListener('resize',resize);
+  resize();
+  function loop(t){
+    ctx.clearRect(0,0,w,h);
+    for(const s of stars){
+      const alpha = 0.4 + 0.6*Math.abs(Math.sin(t/1000*s.speed + s.phase));
+      ctx.fillStyle = `rgba(244,236,255,${alpha})`;
+      ctx.fillRect(s.x, s.y, s.r*1.6, s.r*1.6);
+      s.y += s.speed*0.15;
+      if(s.y>h){s.y=0; s.x=Math.random()*w;}
+    }
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+})();
+
+// ---------- navegación entre pantallas ----------
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  el(id).classList.add('active');
+  if(el('bestDistanceText1')) updateBestDistanceDisplay();
+}
+
+function loadImg(src, fallback){
+  return new Promise(res=>{
+    const img = new Image();
+    img.onload = ()=>res(src);
+    img.onerror = ()=>res(fallback);
+    img.src = src;
+  });
+}
+
+// ---------- pantalla inicio ----------
+el('playerNameInput').value = state.playerName;
+el('btnStartAdventure').addEventListener('click', ()=>{
+  const v = el('playerNameInput').value.trim();
+  state.playerName = v || 'Viajera';
+  localStorage.setItem('nu_playerName', state.playerName);
+  renderLevelSelect();
+  showScreen('screen-level-select');
+});
+
+for(let i=1;i<=6;i++){
+  const btn = el('btnBackHome'+i);
+  if(btn) btn.addEventListener('click', ()=>{ renderLevelSelect(); showScreen('screen-level-select'); });
+}
+
+el('btnPlayAgain').addEventListener('click', ()=>{
+  showScreen('screen-start');
+});
+
+// ===========================================================================
+// AUDIO simple (sin archivos externos)
+// ===========================================================================
+let audioCtx;
+function beep(freq=440,dur=0.08,type='square',vol=0.05){
+  try{
+    audioCtx = audioCtx || new (window.AudioContext||window.webkitAudioContext)();
+    const o = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    o.type=type; o.frequency.value=freq;
+    g.gain.value=vol;
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start();
+    g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime+dur);
+    o.stop(audioCtx.currentTime+dur);
+  }catch(e){}
+}
+
+// ===========================================================================
+// NIVEL 1: RUNNER (INFINITO) — Itz escapa del fantasma
+// ===========================================================================
+const Level1 = (function(){
+  const canvas = el('canvasLevel1');
+  const ctx = canvas.getContext('2d');
+  let W,H,groundY;
+  let running=false, rafId=null;
+  let hearts=3, score=0, speed=4.2, baseSpeedGain=0.0016;
+  let bestDistance = Number(localStorage.getItem('nu_bestDistance')||0);
+  let milestoneShown=false;
+  const MILESTONE_SCORE = 220;
+  let girlY=0, vy=0, isJumping=false, isDucking=false;
+  let obstacles=[], spawnTimer=0, groundOffset=0;
+  let runFrames=[], runFrameIdx=0, runFrameTimer=0;
+  let ghostImg=null;
+
+  function resize(){
+    const rect = canvas.parentElement.getBoundingClientRect();
+    canvas.width = rect.width; canvas.height = rect.height;
+    W = canvas.width; H = canvas.height;
+    groundY = H - 54;
+  }
+  window.addEventListener('resize', resize);
+
+  async function preload(){
+    const base = await loadImg('img/itz_trajeCapucha.png', null);
+    runFrames = [];
+    for(let i=1;i<=4;i++){
+      const f = await loadImg(`img/itz_trajeCapucha_run${i}.png`, base);
+      runFrames.push(f);
+    }
+    ghostImg = await loadImg('img/gerver_fantasma.png', null);
+  }
+
+  function drawHearts(){
+    const box = el('hearts1');
+    box.innerHTML='';
+    for(let i=0;i<3;i++){
+      const h = document.createElement('div');
+      h.className = 'heart' + (i>=hearts ? ' lost':'');
+      box.appendChild(h);
+    }
+  }
+
+  function reset(){
+    hearts=3; score=0; speed=4.2; girlY=0; vy=0; isJumping=false; isDucking=false;
+    obstacles=[]; spawnTimer=0; groundOffset=0; runFrameIdx=0;
+    milestoneShown=false;
+    el('btnAdvanceLevel1').style.display='none';
+    drawHearts();
+    el('loseOverlay1').classList.remove('active');
+    el('winOverlay1').classList.remove('active');
+    el('pauseOverlay1').classList.remove('active');
+  }
+
+  function jump(){
+    if(!running) return;
+    if(!isJumping && !isDucking){ isJumping=true; vy=-11.5; beep(520,0.08,'square',0.04); }
+  }
+  function duckStart(){ if(running && !isJumping) isDucking=true; }
+  function duckEnd(){ isDucking=false; }
+
+  function spawnObstacle(){
+    const type = Math.random()<0.55 ? 'low':'high';
+    obstacles.push({
+      x: W+20, type,
+      w: type==='low'? 26:40, h: type==='low'? 30:22,
+      y: type==='low'? groundY-30 : groundY-70
+    });
+  }
+
+  function girlBox(){
+    const gx = 70;
+    const baseH = isDucking? 34: 62;
+    const gy = groundY - baseH - girlY;
+    return {x:gx, y:gy, w:40, h:baseH};
+  }
+
+  function update(){
+    if(!running) return;
+    if(isJumping){
+      vy += 0.6; girlY -= vy;
+      if(girlY<=0){ girlY=0; vy=0; isJumping=false; }
+    }
+    groundOffset -= speed;
+    score += speed*0.12;
+    speed = Math.min(13, speed + baseSpeedGain + speed*0.00028);
+
+    if(!milestoneShown && score>=MILESTONE_SCORE){
+      milestoneShown = true;
+      el('btnAdvanceLevel1').style.display='inline-block';
+    }
+
+    spawnTimer -= 1;
+    if(spawnTimer<=0){
+      spawnObstacle();
+      spawnTimer = Math.max(55, 100 - speed*6) + Math.random()*40;
+    }
+    const gb = girlBox();
+    for(const o of obstacles){ o.x -= speed; }
+    for(const o of obstacles){
+      if(o.x + o.w < gb.x) continue;
+      if(o.x > gb.x + gb.w) continue;
+      const overlapY = !(gb.y+gb.h < o.y || gb.y > o.y+o.h);
+      if(overlapY){ hit(); break; }
+    }
+    obstacles = obstacles.filter(o=>o.x > -60);
+
+    runFrameTimer += 1;
+    if(runFrameTimer>6){ runFrameTimer=0; runFrameIdx=(runFrameIdx+1)%4; }
+  }
+
+  function hit(){
+    hearts -= 1;
+    drawHearts();
+    beep(140,0.15,'sawtooth',0.06);
+    obstacles = obstacles.filter(o=> o.x > girlBox().x + 60);
+    if(hearts<=0){ lose(); }
+  }
+
+  function saveBest(){
+    const dist = Math.floor(score);
+    if(dist>bestDistance){ bestDistance=dist; localStorage.setItem('nu_bestDistance', bestDistance); }
+    return dist;
+  }
+
+  function lose(){
+    running=false;
+    const dist = saveBest();
+    el('loseText1').textContent = `${state.playerName}, perdiste. Llegaste a ${dist} de distancia. Vuelve a intentarlo.`;
+    el('loseOverlay1').classList.add('active');
+  }
+  function win(){
+    running=false;
+    const dist = saveBest();
+    markCompleted(1);
+    document.querySelector('#winOverlay1 p').textContent = `Sobreviviste ${dist} de distancia antes de decidir seguir tu camino.`;
+    el('winOverlay1').classList.add('active');
+  }
+  function advanceNow(){ if(running) win(); }
+
+  const imgCache = {};
+  function getImg(src){
+    if(!src) return null;
+    if(imgCache[src]) return imgCache[src];
+    const im = new Image(); im.src=src;
+    imgCache[src]=im;
+    return im;
+  }
+
+  function drawPixelImgOrBox(img,x,y,w,h,label){
+    if(img && img.complete && img.naturalWidth>0){
+      ctx.save(); ctx.imageSmoothingEnabled=false;
+      ctx.drawImage(img,x,y,w,h);
+      ctx.restore();
+    } else {
+      ctx.fillStyle='#2a1c5e'; ctx.fillRect(x,y,w,h);
+      ctx.strokeStyle='#ff6fb5'; ctx.strokeRect(x,y,w,h);
+      ctx.fillStyle='#a597cc'; ctx.font='8px monospace';
+      ctx.fillText(label, x+2, y+h/2);
+    }
+  }
+
+  function render(){
+    ctx.clearRect(0,0,W,H);
+    const g = ctx.createLinearGradient(0,0,0,H);
+    g.addColorStop(0,'#150c33'); g.addColorStop(1,'#08051a');
+    ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+
+    const ghostX = 10 + (3-hearts)*22 + Math.sin(Date.now()/300)*4;
+    drawPixelImgOrBox(getImg(ghostImg), ghostX, groundY-70, 46, 70, 'FANTASMA');
+
+    ctx.fillStyle='#1b1240';
+    ctx.fillRect(0,groundY,W,H-groundY);
+    ctx.strokeStyle='rgba(107,227,255,.35)';
+    ctx.setLineDash([14,10]);
+    ctx.lineDashOffset = groundOffset;
+    ctx.beginPath(); ctx.moveTo(0,groundY+1); ctx.lineTo(W,groundY+1); ctx.stroke();
+    ctx.setLineDash([]);
+
+    for(const o of obstacles){
+      ctx.fillStyle = o.type==='low' ? '#ff6fb5' : '#6be3ff';
+      ctx.save(); ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur=8;
+      ctx.fillRect(o.x,o.y,o.w,o.h);
+      ctx.restore();
+    }
+
+    const gb = girlBox();
+    drawPixelImgOrBox(getImg(runFrames[runFrameIdx]), gb.x, gb.y, gb.w, gb.h, 'ITZ');
+
+    ctx.fillStyle='#ffd873';
+    ctx.font="10px 'Press Start 2P', monospace";
+    ctx.fillText('DIST '+Math.floor(score), 12, 18);
+  }
+
+  function loop(){
+    update(); render();
+    if(running) rafId = requestAnimationFrame(loop);
+  }
+
+  function start(){
+    resize(); reset(); running=true;
+    cancelAnimationFrame(rafId);
+    loop();
+  }
+  function pause(){ running=false; cancelAnimationFrame(rafId); }
+  function resume(){ if(!running){ running=true; loop(); } }
+
+  return { preload, start, pause, resume, jump, duckStart, duckEnd, reset, advanceNow,
+           get running(){return running;} };
+})();
+
+window.addEventListener('keydown', (e)=>{
+  if(el('screen-level1').classList.contains('active')){
+    if(e.code==='Space' || e.code==='ArrowUp'){ e.preventDefault(); Level1.jump(); }
+    if(e.code==='ArrowDown'){ e.preventDefault(); Level1.duckStart(); }
+  }
+});
+window.addEventListener('keyup',(e)=>{ if(e.code==='ArrowDown'){ Level1.duckEnd(); } });
+el('tbtnJump').addEventListener('touchstart',(e)=>{e.preventDefault();Level1.jump();});
+el('tbtnJump').addEventListener('mousedown',()=>Level1.jump());
+el('tbtnDuck').addEventListener('touchstart',(e)=>{e.preventDefault();Level1.duckStart();});
+el('tbtnDuck').addEventListener('touchend',(e)=>{e.preventDefault();Level1.duckEnd();});
+el('tbtnDuck').addEventListener('mousedown',()=>Level1.duckStart());
+el('tbtnDuck').addEventListener('mouseup',()=>Level1.duckEnd());
+
+function updateBestDistanceDisplay(){
+  const best = Number(localStorage.getItem('nu_bestDistance')||0);
+  el('bestDistanceText1').textContent = best>0 ? `✦ Tu mejor distancia: ${best} ✦` : '';
+}
+
+el('btnStartLevel1').addEventListener('click', async ()=>{
+  showScreen('screen-level1');
+  await Level1.preload();
+  Level1.start();
+});
+el('btnAdvanceLevel1').addEventListener('click', ()=>{ Level1.advanceNow(); });
+el('btnPause1').addEventListener('click', ()=>{ Level1.pause(); el('pauseOverlay1').classList.add('active'); });
+el('btnResume1').addEventListener('click', ()=>{ el('pauseOverlay1').classList.remove('active'); Level1.resume(); });
+el('btnRestartLevel1').addEventListener('click', ()=>{ el('pauseOverlay1').classList.remove('active'); Level1.start(); });
+el('btnExitLevel1').addEventListener('click', ()=>{ Level1.pause(); el('pauseOverlay1').classList.remove('active'); showScreen('screen-story1'); });
+el('btnHomeFromPause1').addEventListener('click', ()=>{ Level1.pause(); el('pauseOverlay1').classList.remove('active'); renderLevelSelect(); showScreen('screen-level-select'); });
+
+el('btnRetry1').addEventListener('click', ()=>{ el('loseOverlay1').classList.remove('active'); Level1.start(); });
+el('btnExitToStory1').addEventListener('click', ()=>{ el('loseOverlay1').classList.remove('active'); showScreen('screen-story1'); });
+el('btnHomeFromLose1').addEventListener('click', ()=>{ el('loseOverlay1').classList.remove('active'); renderLevelSelect(); showScreen('screen-level-select'); });
+
+el('btnToStory2').addEventListener('click', ()=>{ el('winOverlay1').classList.remove('active'); showScreen('screen-story2'); });
+el('btnLevel1ToSelect').addEventListener('click', ()=>{ el('winOverlay1').classList.remove('active'); renderLevelSelect(); showScreen('screen-level-select'); });
+
+// ===========================================================================
+// NIVEL 2: ADIVINA LA PALABRA
+// ===========================================================================
+const Level2 = (function(){
+  const WORDS = ['AMOR','ESTRELLAS','UNIVERSO','GALAXIA','CORAZON','ETERNO','LUNA','DESTINO','ABRAZO','CONSTELACION','COMETA','INFINITO'];
+  let word='', guessed=new Set(), hearts=3, wrong=0, maxWrong=6;
+
+  function pickWord(){ word = WORDS[Math.floor(Math.random()*WORDS.length)]; guessed=new Set(); wrong=0; hearts=3; }
+
+  function drawHearts(){
+    const box = el('hearts2'); box.innerHTML='';
+    for(let i=0;i<3;i++){ const h=document.createElement('div'); h.className='heart'+(i>=hearts?' lost':''); box.appendChild(h); }
+  }
+  function renderWord(){ el('wordDisplay2').textContent = word.split('').map(l=> guessed.has(l)? l:'_').join(' '); }
+  function renderKeyboard(){
+    const kb = el('keyboard2'); kb.innerHTML='';
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').forEach(letter=>{
+      const b = document.createElement('button');
+      b.className='key'; b.textContent=letter;
+      b.addEventListener('click', ()=>guess(letter,b));
+      kb.appendChild(b);
+    });
+  }
+  function updateGhostVisual(){
+    const pct = Math.min(100, (wrong/maxWrong)*100);
+    el('ghostMeter2').style.width = pct+'%';
+    const ghost = el('ghostWordSprite');
+    ghost.style.transform = `translateX(${pct*2.2}px) scale(${1+pct/220})`;
+    ghost.style.opacity = 0.35 + pct/140;
+  }
+  function guess(letter, btn){
+    if(btn.disabled) return;
+    btn.disabled=true;
+    if(word.includes(letter)){
+      guessed.add(letter); btn.classList.add('correct'); beep(700,0.08,'square',0.04);
+      renderWord();
+      if(word.split('').every(l=>guessed.has(l))){ win(); }
+    } else {
+      wrong++; hearts = Math.max(0, 3 - Math.floor(wrong/2));
+      btn.classList.add('wrong'); beep(160,0.15,'sawtooth',0.05);
+      drawHearts(); updateGhostVisual();
+      if(wrong>=maxWrong || hearts<=0){ lose(); }
+    }
+  }
+  function lose(){ el('loseText2').textContent = `${state.playerName}, perdiste. Vuelve a intentarlo.`; el('loseOverlay2').classList.add('active'); }
+  function win(){ markCompleted(2); el('winOverlay2').classList.add('active'); }
+
+  function start(){
+    pickWord(); drawHearts(); renderWord(); renderKeyboard(); updateGhostVisual();
+    el('loseOverlay2').classList.remove('active');
+    el('winOverlay2').classList.remove('active');
+    el('pauseOverlay2').classList.remove('active');
+  }
+  return { start };
+})();
+
+el('btnStartLevel2').addEventListener('click', ()=>{ showScreen('screen-level2'); Level2.start(); });
+el('btnPause2').addEventListener('click', ()=>{ el('pauseOverlay2').classList.add('active'); });
+el('btnResume2').addEventListener('click', ()=>{ el('pauseOverlay2').classList.remove('active'); });
+el('btnRestartLevel2').addEventListener('click', ()=>{ el('pauseOverlay2').classList.remove('active'); Level2.start(); });
+el('btnExitLevel2').addEventListener('click', ()=>{ el('pauseOverlay2').classList.remove('active'); showScreen('screen-story2'); });
+el('btnHomeFromPause2').addEventListener('click', ()=>{ el('pauseOverlay2').classList.remove('active'); renderLevelSelect(); showScreen('screen-level-select'); });
+
+el('btnRetry2').addEventListener('click', ()=>{ el('loseOverlay2').classList.remove('active'); Level2.start(); });
+el('btnExitToStory2').addEventListener('click', ()=>{ el('loseOverlay2').classList.remove('active'); showScreen('screen-story2'); });
+el('btnHomeFromLose2').addEventListener('click', ()=>{ el('loseOverlay2').classList.remove('active'); renderLevelSelect(); showScreen('screen-level-select'); });
+
+el('btnToStory3').addEventListener('click', ()=>{ el('winOverlay2').classList.remove('active'); showScreen('screen-story3'); });
+el('btnLevel2ToSelect').addEventListener('click', ()=>{ el('winOverlay2').classList.remove('active'); renderLevelSelect(); showScreen('screen-level-select'); });
+
+// ===========================================================================
+// FÁBRICA DE NIVELES DE LABERINTO — usada por Nivel 3 y Nivel 6
+// ===========================================================================
+const mazeRegistry = [];
+function registerMaze(screenId, instance){ mazeRegistry.push({screenId, instance}); }
+
+function createMazeLevel(cfg){
+  const canvas = el(cfg.canvasId);
+  const ctx = canvas.getContext('2d');
+  const COLS=cfg.cols, ROWS=cfg.rows;
+  let cell, offX, offY;
+  let grid=[], player={r:0,c:0}, goal={r:0,c:0}, ghost={r:0,c:0};
+  let running=false, ghostTimer=null, imgs={};
+
+  function resize(){
+    const rect = canvas.parentElement.getBoundingClientRect();
+    canvas.width=rect.width; canvas.height=rect.height;
+    cell = Math.floor(Math.min((canvas.width-20)/COLS,(canvas.height-20)/ROWS));
+    offX = (canvas.width - cell*COLS)/2;
+    offY = (canvas.height - cell*ROWS)/2;
+  }
+  window.addEventListener('resize',resize);
+
+  function makeGrid(){
+    grid = [];
+    for(let r=0;r<ROWS;r++){
+      const row=[];
+      for(let c=0;c<COLS;c++) row.push({r,c,walls:{N:true,S:true,E:true,W:true},visited:false});
+      grid.push(row);
+    }
+    const stack=[grid[0][0]];
+    grid[0][0].visited=true;
+    while(stack.length){
+      const cur = stack[stack.length-1];
+      const neighbors=[];
+      const {r,c}=cur;
+      const dirs=[['N',-1,0],['S',1,0],['E',0,1],['W',0,-1]];
+      for(const [d,dr,dc] of dirs){
+        const nr=r+dr, nc=c+dc;
+        if(nr>=0&&nr<ROWS&&nc>=0&&nc<COLS&&!grid[nr][nc].visited) neighbors.push([d,nr,nc]);
+      }
+      if(neighbors.length){
+        const [d,nr,nc] = neighbors[Math.floor(Math.random()*neighbors.length)];
+        const opp={N:'S',S:'N',E:'W',W:'E'};
+        cur.walls[d]=false; grid[nr][nc].walls[opp[d]]=false; grid[nr][nc].visited=true;
+        stack.push(grid[nr][nc]);
+      } else stack.pop();
+    }
+  }
+
+  async function preload(){
+    imgs.player = await loadImg('img/itz_trajeNegro.png', null);
+    imgs.goal = await loadImg('img/gerver_pixel.png', null);
+    imgs.ghost = await loadImg('img/gerver_fantasma.png', null);
+  }
+
+  const imgCache={};
+  function getImg(src){
+    if(!src) return null;
+    if(imgCache[src]) return imgCache[src];
+    const im=new Image(); im.src=src; imgCache[src]=im; return im;
+  }
+
+  function bfsPath(from,to){
+    const key=(r,c)=>r+'-'+c;
+    const visited=new Set([key(from.r,from.c)]);
+    const q=[[from,[]]];
+    while(q.length){
+      const [pos,path]=q.shift();
+      if(pos.r===to.r && pos.c===to.c) return path;
+      const cd=grid[pos.r][pos.c];
+      const moves=[];
+      if(!cd.walls.N) moves.push({r:pos.r-1,c:pos.c});
+      if(!cd.walls.S) moves.push({r:pos.r+1,c:pos.c});
+      if(!cd.walls.E) moves.push({r:pos.r,c:pos.c+1});
+      if(!cd.walls.W) moves.push({r:pos.r,c:pos.c-1});
+      for(const m of moves){
+        const k=key(m.r,m.c);
+        if(!visited.has(k)){ visited.add(k); q.push([m,[...path,m]]); }
+      }
+    }
+    return [];
+  }
+
+  function render(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    const g=ctx.createLinearGradient(0,0,0,canvas.height);
+    g.addColorStop(0,'#150c33'); g.addColorStop(1,'#08051a');
+    ctx.fillStyle=g; ctx.fillRect(0,0,canvas.width,canvas.height);
+
+    ctx.strokeStyle='#6be3ff'; ctx.lineWidth=2;
+    ctx.shadowColor='rgba(107,227,255,.5)'; ctx.shadowBlur=4;
+    for(let r=0;r<ROWS;r++){
+      for(let c=0;c<COLS;c++){
+        const cd=grid[r][c];
+        const x=offX+c*cell, y=offY+r*cell;
+        ctx.beginPath();
+        if(cd.walls.N){ctx.moveTo(x,y);ctx.lineTo(x+cell,y);}
+        if(cd.walls.S){ctx.moveTo(x,y+cell);ctx.lineTo(x+cell,y+cell);}
+        if(cd.walls.E){ctx.moveTo(x+cell,y);ctx.lineTo(x+cell,y+cell);}
+        if(cd.walls.W){ctx.moveTo(x,y);ctx.lineTo(x,y+cell);}
+        ctx.stroke();
+      }
+    }
+    ctx.shadowBlur=0;
+
+    drawEntity(imgs.goal, goal, '#ffd873', 'GERVER');
+    drawEntity(imgs.ghost, ghost, '#ff4d5e', 'FANTASMA');
+    drawEntity(imgs.player, player, '#ff6fb5', 'ITZ');
+  }
+
+  function drawEntity(imgSrc,pos,color,label){
+    const x=offX+pos.c*cell, y=offY+pos.r*cell;
+    const pad=cell*0.12;
+    const im=getImg(imgSrc);
+    if(im && im.complete && im.naturalWidth>0){
+      ctx.imageSmoothingEnabled=false;
+      ctx.drawImage(im,x+pad,y+pad,cell-pad*2,cell-pad*2);
+    } else {
+      ctx.fillStyle=color;
+      ctx.beginPath(); ctx.arc(x+cell/2,y+cell/2,cell*0.32,0,Math.PI*2); ctx.fill();
+    }
+  }
+
+  function movePlayer(dir){
+    if(!running) return;
+    const cd = grid[player.r][player.c];
+    let {r,c}=player;
+    if(dir==='up' && !cd.walls.N) r--;
+    if(dir==='down' && !cd.walls.S) r++;
+    if(dir==='left' && !cd.walls.W) c--;
+    if(dir==='right' && !cd.walls.E) c++;
+    if(r!==player.r || c!==player.c){
+      player={r,c}; beep(360,0.05,'square',0.03);
+      render(); checkState();
+    }
+  }
+  function moveGhostStep(){
+    if(!running) return;
+    const path = bfsPath(ghost, player);
+    if(path.length>0){ ghost = path[0]; }
+    render(); checkState();
+  }
+  function checkState(){
+    if(player.r===goal.r && player.c===goal.c){ win(); return; }
+    if(player.r===ghost.r && player.c===ghost.c){ lose(); return; }
+  }
+  function win(){
+    running=false; clearInterval(ghostTimer);
+    markCompleted(cfg.levelNum);
+    if(cfg.onWin) cfg.onWin();
+    el(cfg.winOverlayId).classList.add('active');
+  }
+  function lose(){
+    running=false; clearInterval(ghostTimer);
+    el(cfg.loseTextId).textContent = `${state.playerName}, perdiste. Vuelve a intentarlo.`;
+    el(cfg.loseOverlayId).classList.add('active');
+  }
+  function start(){
+    resize(); makeGrid();
+    player={r:0,c:0}; goal={r:ROWS-1,c:COLS-1}; ghost={r:ROWS-1,c:0};
+    running=true;
+    el(cfg.loseOverlayId).classList.remove('active');
+    el(cfg.winOverlayId).classList.remove('active');
+    el(cfg.pauseOverlayId).classList.remove('active');
+    render();
+    clearInterval(ghostTimer);
+    ghostTimer = setInterval(moveGhostStep, cfg.ghostInterval);
+  }
+  function pause(){ running=false; clearInterval(ghostTimer); }
+  function resume(){ if(!running){ running=true; clearInterval(ghostTimer); ghostTimer=setInterval(moveGhostStep,cfg.ghostInterval);} }
+
+  document.querySelectorAll('#'+cfg.dpadId+' button').forEach(b=>{
+    b.addEventListener('click', ()=>movePlayer(b.dataset.dir));
+  });
+
+  return { preload, start, pause, resume, movePlayer };
+}
+
+window.addEventListener('keydown',(e)=>{
+  const map={ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right', w:'up',s:'down',a:'left',d:'right'};
+  if(!map[e.key]) return;
+  const active = mazeRegistry.find(m=>el(m.screenId).classList.contains('active'));
+  if(active){ e.preventDefault(); active.instance.movePlayer(map[e.key]); }
+});
+
+// ---------- NIVEL 3 ----------
+const Level3 = createMazeLevel({
+  levelNum:3, canvasId:'canvasLevel3', dpadId:'dpad3',
+  pauseOverlayId:'pauseOverlay3', loseOverlayId:'loseOverlay3', winOverlayId:'winOverlay3', loseTextId:'loseText3',
+  cols:11, rows:9, ghostInterval:750
+});
+registerMaze('screen-level3', Level3);
+
+el('btnStartLevel3').addEventListener('click', async ()=>{ showScreen('screen-level3'); await Level3.preload(); Level3.start(); });
+el('btnPause3').addEventListener('click', ()=>{ Level3.pause(); el('pauseOverlay3').classList.add('active'); });
+el('btnResume3').addEventListener('click', ()=>{ el('pauseOverlay3').classList.remove('active'); Level3.resume(); });
+el('btnRestartLevel3').addEventListener('click', ()=>{ el('pauseOverlay3').classList.remove('active'); Level3.start(); });
+el('btnExitLevel3').addEventListener('click', ()=>{ Level3.pause(); el('pauseOverlay3').classList.remove('active'); showScreen('screen-story3'); });
+el('btnHomeFromPause3').addEventListener('click', ()=>{ Level3.pause(); el('pauseOverlay3').classList.remove('active'); renderLevelSelect(); showScreen('screen-level-select'); });
+el('btnRetry3').addEventListener('click', ()=>{ el('loseOverlay3').classList.remove('active'); Level3.start(); });
+el('btnExitToStory3').addEventListener('click', ()=>{ el('loseOverlay3').classList.remove('active'); showScreen('screen-story3'); });
+el('btnHomeFromLose3').addEventListener('click', ()=>{ el('loseOverlay3').classList.remove('active'); renderLevelSelect(); showScreen('screen-level-select'); });
+el('btnToStory4').addEventListener('click', ()=>{ el('winOverlay3').classList.remove('active'); showScreen('screen-story4'); });
+el('btnLevel3ToSelect').addEventListener('click', ()=>{ el('winOverlay3').classList.remove('active'); renderLevelSelect(); showScreen('screen-level-select'); });
+
+// ===========================================================================
+// NIVEL 4: COMPLETA LA PALABRA
+// ===========================================================================
+const Level4 = (function(){
+  const BANK = [
+    {clue:'Sentimiento que todo lo puede.', answer:'AMOR'},
+    {clue:'Miles de ellas brillan en la noche.', answer:'ESTRELLAS'},
+    {clue:'Todo lo que existe, incluidos tú y yo.', answer:'UNIVERSO'},
+    {clue:'El satélite natural de la Tierra.', answer:'LUNA'},
+    {clue:'Cuando dos personas se sostienen fuerte.', answer:'ABRAZO'},
+    {clue:'Lo que nadie puede cambiar, ni el tiempo.', answer:'DESTINO'},
+    {clue:'Cruza el cielo dejando una estela de luz.', answer:'COMETA'},
+    {clue:'No tiene fin, como este sentimiento.', answer:'INFINITO'},
+  ];
+  let rounds=[], idx=0, hearts=3;
+
+  function drawHearts(){
+    const box=el('hearts4'); box.innerHTML='';
+    for(let i=0;i<3;i++){ const h=document.createElement('div'); h.className='heart'+(i>=hearts?' lost':''); box.appendChild(h); }
+  }
+  function showRound(){
+    el('clueText4').textContent = rounds[idx].clue;
+    el('progressText4').textContent = `Palabra ${idx+1} de ${rounds.length}`;
+    el('answerInput4').value=''; el('answerInput4').focus();
+  }
+  function submit(){
+    const val = el('answerInput4').value.trim().toUpperCase();
+    if(!val) return;
+    if(val === rounds[idx].answer){
+      beep(700,0.08,'square',0.04);
+      idx++;
+      if(idx>=rounds.length){ win(); } else { showRound(); }
+    } else {
+      hearts--; drawHearts(); beep(160,0.15,'sawtooth',0.05);
+      const input = el('answerInput4');
+      input.classList.add('shake');
+      setTimeout(()=>input.classList.remove('shake'),400);
+      if(hearts<=0){ lose(); }
+    }
+  }
+  function lose(){ el('loseText4').textContent = `${state.playerName}, perdiste. Vuelve a intentarlo.`; el('loseOverlay4').classList.add('active'); }
+  function win(){ markCompleted(4); el('winOverlay4').classList.add('active'); }
+
+  function start(){
+    rounds = shuffleArr(BANK).slice(0,5);
+    idx=0; hearts=3; drawHearts(); showRound();
+    el('loseOverlay4').classList.remove('active');
+    el('winOverlay4').classList.remove('active');
+    el('pauseOverlay4').classList.remove('active');
+  }
+  return { start, submit };
+})();
+
+el('btnStartLevel4').addEventListener('click', ()=>{ showScreen('screen-level4'); Level4.start(); });
+el('btnSubmit4').addEventListener('click', ()=>Level4.submit());
+el('answerInput4').addEventListener('keydown',(e)=>{ if(e.key==='Enter'){ e.preventDefault(); Level4.submit(); } });
+el('btnPause4').addEventListener('click', ()=>{ el('pauseOverlay4').classList.add('active'); });
+el('btnResume4').addEventListener('click', ()=>{ el('pauseOverlay4').classList.remove('active'); });
+el('btnRestartLevel4').addEventListener('click', ()=>{ el('pauseOverlay4').classList.remove('active'); Level4.start(); });
+el('btnExitLevel4').addEventListener('click', ()=>{ el('pauseOverlay4').classList.remove('active'); showScreen('screen-story4'); });
+el('btnHomeFromPause4').addEventListener('click', ()=>{ el('pauseOverlay4').classList.remove('active'); renderLevelSelect(); showScreen('screen-level-select'); });
+el('btnRetry4').addEventListener('click', ()=>{ el('loseOverlay4').classList.remove('active'); Level4.start(); });
+el('btnExitToStory4').addEventListener('click', ()=>{ el('loseOverlay4').classList.remove('active'); showScreen('screen-story4'); });
+el('btnHomeFromLose4').addEventListener('click', ()=>{ el('loseOverlay4').classList.remove('active'); renderLevelSelect(); showScreen('screen-level-select'); });
+el('btnToStory5').addEventListener('click', ()=>{ el('winOverlay4').classList.remove('active'); showScreen('screen-story5'); });
+el('btnLevel4ToSelect').addEventListener('click', ()=>{ el('winOverlay4').classList.remove('active'); renderLevelSelect(); showScreen('screen-level-select'); });
+
+// ===========================================================================
+// NIVEL 5: MEMORIA DE ESTRELLAS
+// ===========================================================================
+const Level5 = (function(){
+  const SYMBOLS = ['✦','💫','🌙','💖','🚀','👻'];
+  const TOTAL_TIME = 50;
+  let cards=[], flipped=[], matchedCount=0, timeLeft=TOTAL_TIME, timerInt=null, lockBoard=false, running=false;
+
+  function buildBoard(){
+    cards = shuffleArr([...SYMBOLS,...SYMBOLS]).map((s,i)=>({id:i,symbol:s}));
+    const grid = el('memoryGrid'); grid.innerHTML='';
+    cards.forEach((c,idx)=>{
+      const b = document.createElement('button');
+      b.className='mem-card'; b.dataset.idx=idx; b.textContent='?';
+      b.addEventListener('click', ()=>flipCard(idx,b));
+      grid.appendChild(b);
+    });
+    el('memPairsText').textContent = `0/${SYMBOLS.length} PARES`;
+  }
+  function flipCard(idx,btn){
+    if(!running || lockBoard || btn.classList.contains('flipped') || btn.classList.contains('matched')) return;
+    btn.textContent = cards[idx].symbol;
+    btn.classList.add('flipped');
+    flipped.push({idx,btn});
+    beep(500,0.05,'square',0.03);
+    if(flipped.length===2){
+      lockBoard=true;
+      const [a,b] = flipped;
+      if(cards[a.idx].symbol===cards[b.idx].symbol){
+        a.btn.classList.add('matched'); b.btn.classList.add('matched');
+        matchedCount++; flipped=[]; lockBoard=false;
+        beep(760,0.1,'square',0.04);
+        el('memPairsText').textContent = `${matchedCount}/${SYMBOLS.length} PARES`;
+        if(matchedCount===SYMBOLS.length){ win(); }
+      } else {
+        setTimeout(()=>{
+          a.btn.textContent='?'; a.btn.classList.remove('flipped');
+          b.btn.textContent='?'; b.btn.classList.remove('flipped');
+          flipped=[]; lockBoard=false;
+        },650);
+      }
+    }
+  }
+  function tick(){
+    timeLeft -= 1;
+    const pct = Math.max(0, Math.min(100, (1-timeLeft/TOTAL_TIME)*100));
+    el('timeMeter5').style.width = pct+'%';
+    const ghost = el('ghostMemSprite');
+    ghost.style.transform = `translateX(${pct*2}px)`;
+    ghost.style.opacity = 0.3+pct/140;
+    if(timeLeft<=0){ lose(); }
+  }
+  function lose(){ running=false; clearInterval(timerInt); el('loseText5').textContent = `${state.playerName}, se acabó el tiempo. Vuelve a intentarlo.`; el('loseOverlay5').classList.add('active'); }
+  function win(){ running=false; clearInterval(timerInt); markCompleted(5); el('winOverlay5').classList.add('active'); }
+
+  function start(){
+    matchedCount=0; flipped=[]; lockBoard=false; timeLeft=TOTAL_TIME; running=true;
+    buildBoard();
+    el('timeMeter5').style.width='0%';
+    el('ghostMemSprite').style.transform='translateX(0)'; el('ghostMemSprite').style.opacity='0.4';
+    el('loseOverlay5').classList.remove('active');
+    el('winOverlay5').classList.remove('active');
+    el('pauseOverlay5').classList.remove('active');
+    clearInterval(timerInt); timerInt=setInterval(tick,1000);
+  }
+  function pause(){ running=false; clearInterval(timerInt); }
+  function resume(){ if(!running){ running=true; timerInt=setInterval(tick,1000); } }
+  return { start, pause, resume };
+})();
+
+el('btnStartLevel5').addEventListener('click', ()=>{ showScreen('screen-level5'); Level5.start(); });
+el('btnPause5').addEventListener('click', ()=>{ Level5.pause(); el('pauseOverlay5').classList.add('active'); });
+el('btnResume5').addEventListener('click', ()=>{ el('pauseOverlay5').classList.remove('active'); Level5.resume(); });
+el('btnRestartLevel5').addEventListener('click', ()=>{ el('pauseOverlay5').classList.remove('active'); Level5.start(); });
+el('btnExitLevel5').addEventListener('click', ()=>{ Level5.pause(); el('pauseOverlay5').classList.remove('active'); showScreen('screen-story5'); });
+el('btnHomeFromPause5').addEventListener('click', ()=>{ Level5.pause(); el('pauseOverlay5').classList.remove('active'); renderLevelSelect(); showScreen('screen-level-select'); });
+el('btnRetry5').addEventListener('click', ()=>{ el('loseOverlay5').classList.remove('active'); Level5.start(); });
+el('btnExitToStory5').addEventListener('click', ()=>{ el('loseOverlay5').classList.remove('active'); showScreen('screen-story5'); });
+el('btnHomeFromLose5').addEventListener('click', ()=>{ el('loseOverlay5').classList.remove('active'); renderLevelSelect(); showScreen('screen-level-select'); });
+el('btnToStory6').addEventListener('click', ()=>{ el('winOverlay5').classList.remove('active'); showScreen('screen-story6'); });
+el('btnLevel5ToSelect').addEventListener('click', ()=>{ el('winOverlay5').classList.remove('active'); renderLevelSelect(); showScreen('screen-level-select'); });
+
+// ---------- NIVEL 6: laberinto nocturno (más grande y rápido) ----------
+const Level6 = createMazeLevel({
+  levelNum:6, canvasId:'canvasLevel6', dpadId:'dpad6',
+  pauseOverlayId:'pauseOverlay6', loseOverlayId:'loseOverlay6', winOverlayId:'winOverlay6', loseTextId:'loseText6',
+  cols:13, rows:11, ghostInterval:520,
+  onWin: ()=>{
+    el('winText6').textContent = isAllCompleted()
+      ? 'El camino a casa por fin se abre entre las estrellas.'
+      : 'El camino a casa por fin se abre... aunque aún quedan otras estrellas por explorar.';
+    el('btnToVictory').style.display = isAllCompleted() ? 'inline-block' : 'none';
+  }
+});
+registerMaze('screen-level6', Level6);
+
+el('btnStartLevel6').addEventListener('click', async ()=>{ showScreen('screen-level6'); await Level6.preload(); Level6.start(); });
+el('btnPause6').addEventListener('click', ()=>{ Level6.pause(); el('pauseOverlay6').classList.add('active'); });
+el('btnResume6').addEventListener('click', ()=>{ el('pauseOverlay6').classList.remove('active'); Level6.resume(); });
+el('btnRestartLevel6').addEventListener('click', ()=>{ el('pauseOverlay6').classList.remove('active'); Level6.start(); });
+el('btnExitLevel6').addEventListener('click', ()=>{ Level6.pause(); el('pauseOverlay6').classList.remove('active'); showScreen('screen-story6'); });
+el('btnHomeFromPause6').addEventListener('click', ()=>{ Level6.pause(); el('pauseOverlay6').classList.remove('active'); renderLevelSelect(); showScreen('screen-level-select'); });
+el('btnRetry6').addEventListener('click', ()=>{ el('loseOverlay6').classList.remove('active'); Level6.start(); });
+el('btnExitToStory6').addEventListener('click', ()=>{ el('loseOverlay6').classList.remove('active'); showScreen('screen-story6'); });
+el('btnHomeFromLose6').addEventListener('click', ()=>{ el('loseOverlay6').classList.remove('active'); renderLevelSelect(); showScreen('screen-level-select'); });
+el('btnLevel6ToSelect').addEventListener('click', ()=>{ el('winOverlay6').classList.remove('active'); renderLevelSelect(); showScreen('screen-level-select'); });
+
+el('btnToVictory').addEventListener('click', ()=>{
+  el('winOverlay6').classList.remove('active');
+  el('victoryText').textContent = `El fantasma se disolvió en la noche. ${state.playerName} corrió hasta los brazos de Gerver, y el universo entero pareció detenerse un instante para ellos.`;
+  showScreen('screen-victory');
+});
+
+// ---------- primer render del mapa de niveles ----------
+renderLevelSelect();
+
+</script>
+</body>
+</html>
