@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🌹 Heladito en el Laberinto</title>
+    <style>
+        /* Estilos generales y responsivos */
+        body {
+            margin: 0;
+            padding: 10px;
+            background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            touch-action: none; /* Evita zoom y scroll en celulares */
+        }
+        .game-wrapper {
+            background: #FFE4E1;
+            padding: 15px;
+            border-radius: 30px;
+            box-shadow: 0 20px 35px rgba(0, 0, 0, 0.1);
+            border: 4px solid #fff;
+            position: relative;
+            max-width: 100%;
+            width: 700px; /* Ancho máximo */
+        }
+        canvas {
+            background-color: #FFF9C4;
+            border-radius: 20px;
+            display: block;
+            width: 100%; /* Se adapta al celular */
+            height: auto;
+            aspect-ratio: 700 / 550; /* Mantiene la proporción */
+            box-shadow: inset 0 0 20px rgba(255, 183, 197, 0.5);
+            touch-action: none;
+        }
+        .ui-panel {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+            padding: 10px 20px;
+            background: #FFDAB9;
+            border-radius: 50px;
+            color: #4a2c2c;
+            font-weight: bold;
+        }
+
+        /* ------- MENSAJES DE AMOR ------- */
+        #message-overlay {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 240, 245, 0.95);
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            border-radius: 20px;
+            z-index: 10;
+        }
+        #message-box {
+            background: #fff;
+            padding: 30px 40px;
+            border-radius: 30px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(255, 105, 180, 0.3);
+            max-width: 80%;
+        }
+        #message-box h2 { color: #FF1493; font-size: 24px; margin-bottom: 10px; }
+        #message-box p { color: #C71585; font-size: 18px; }
+        .btn-next {
+            margin-top: 20px;
+            background: #FF69B4;
+            color: white;
+            border: none;
+            padding: 10px 30px;
+            font-size: 18px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .btn-next:hover { background: #FF1493; }
+
+        /* ------- CONTROLES TÁCTILES (D-PAD) ------- */
+        #dpad {
+            position: absolute;
+            bottom: 70px;
+            left: 15px;
+            display: grid;
+            grid-template-columns: 55px 55px 55px;
+            grid-template-rows: 55px 55px 55px;
+            gap: 5px;
+            touch-action: none;
+            z-index: 20;
+            pointer-events: auto;
+        }
+        #btn-up { grid-column: 2; grid-row: 1; }
+        #btn-left { grid-column: 1; grid-row: 2; }
+        #btn-right { grid-column: 3; grid-row: 2; }
+        #btn-down { grid-column: 2; grid-row: 3; }
+        .dpad-btn {
+            width: 55px; height: 55px;
+            border-radius: 50%;
+            background: rgba(255, 105, 180, 0.35);
+            border: 2px solid rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(2px);
+            color: white;
+            font-size: 22px;
+            font-weight: bold;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            user-select: none;
+            touch-action: none;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            -webkit-tap-highlight-color: transparent;
+        }
+        .dpad-btn:active, .dpad-btn.pressed {
+            background: rgba(255, 20, 147, 0.7);
+            transform: scale(0.95);
+        }
+        @media (max-width: 500px) {
+            /* Agrandamos un poco los botones en pantallas muy pequeñas */
+            #dpad { left: 5px; bottom: 60px; }
+            .dpad-btn { width: 50px; height: 50px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="game-wrapper">
+    <canvas id="gameCanvas" width="700" height="550"></canvas>
+
+    <div class="ui-panel">
+        <span id="levelDisplay">🚩 Nivel: 1</span>
+        <span id="fruitDisplay">🍓 Frutas: 0 / 5</span>
+    </div>
+
+    <!-- IMAGEN PERSONALIZADA (Cámbiala aquí) -->
+    <div style="display: none;">
+        <img id="heladito-img" src="muñeca.jpg" alt="Heladito Personalizado">
+    </div>
+
+    <!-- CRUCETA TÁCTIL PARA MÓVIL -->
+    <div id="dpad">
+        <button class="dpad-btn" id="btn-up">▲</button>
+        <button class="dpad-btn" id="btn-left">◀</button>
+        <button class="dpad-btn" id="btn-right">▶</button>
+        <button class="dpad-btn" id="btn-down">▼</button>
+    </div>
+
+    <!-- MENSAJE FINAL DE NIVEL -->
+    <div id="message-overlay">
+        <div id="message-box">
+            <h2 id="msgTitle">¡Felicidades!</h2>
+            <p id="msgText">¡Eres una campeona!</p>
+            <button class="btn-next" onclick="nextLevel()">🌺 Siguiente Nivel ➜</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ---- VARIABLES GLOBALES ----
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const levelDisplay = document.getElementById('levelDisplay');
+    const fruitDisplay = document.getElementById('fruitDisplay');
+    const overlay = document.getElementById('message-overlay');
+    const msgText = document.getElementById('msgText');
+    const msgTitle = document.getElementById('msgTitle');
+
+    const heladoImgElement = document.getElementById('heladito-img');
+    let heladoImgLoaded = false;
+    heladoImgElement.onload = () => { heladoImgLoaded = true; };
+
+    const loveMessages = [
+        "🌟 ¡Muy bien lo lograste mi amor! Gracias por completar el nivel.",
+        "💖 Eres increíble, mi vida. ¡Cada nivel es más divertido contigo!",
+        "🥰 ¡Nivel superado! Eres la mejor jugadora del mundo. Te amo.",
+        "🌈 ¡Espectacular! Me encanta pasar tiempo contigo, hermosa.",
+        "❤️ ¡Vamos campeona! Ya llegamos a la mitad. ¡Eres mi orgullo!",
+        "✨ Otro nivel más y lo hiciste perfecto. Estoy tan feliz de que estés aquí.",
+        "🥹 ¡Qué bien juegas! Eres la luz de mis días. Gracias por sonreírme.",
+        "🦋 ¡Nivel 8 superado! Tu determinación me enamora cada día más.",
+        "💘 ¡Solo uno más para el final! Eres la dueña de mi corazón.",
+        "💕🎉 ¡Felicidades Campeona! Has conquistado los 10 niveles. ¡TE AMO CON TODO MI SER!"
+    ];
+
+    let currentLevel = 1;
+    let fruits = [];
+    let enemies = [];
+    let player = { x: 350, y: 275, size: 20 };
+    let fruitCollected = 0;
+    let levelFruitTarget = 0;
+    let gameRunning = true;
+
+    // Estado de controles: única fuente de verdad para el movimiento del jugador
+    let keys = { w: false, a: false, s: false, d: false, ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false };
+
+    // Resetea TODAS las teclas a "no presionada". Se usa como red de seguridad
+    // para que el helado nunca quede "moviéndose solo" por una tecla atascada.
+    function resetAllKeys() {
+        for (let k in keys) keys[k] = false;
+        document.querySelectorAll('.dpad-btn').forEach(b => b.classList.remove('pressed'));
+    }
+
+    const GRID_COLS = 28;
+    const GRID_ROWS = 22;
+    const CELL_SIZE = 25;
+    let maze = [];
+
+    // ---- GENERACIÓN DE LABERINTOS CON RUTAS DE ESCAPE ----
+    function generateMaze() {
+        let grid = Array(GRID_ROWS).fill().map(() => Array(GRID_COLS).fill(1));
+        function getNeighbors(row, col) {
+            const directions = [[0, 2], [0, -2], [2, 0], [-2, 0]];
+            let neighbors = [];
+            for (let [dr, dc] of directions) {
+                let nr = row + dr;
+                let nc = col + dc;
+                if (nr > 0 && nr < GRID_ROWS && nc > 0 && nc < GRID_COLS && grid[nr][nc] === 1) {
+                    neighbors.push([nr, nc]);
+                }
+            }
+            return neighbors;
+        }
+        function carve(row, col) {
+            grid[row][col] = 0;
+            let neighbors = getNeighbors(row, col);
+            while (neighbors.length > 0) {
+                let idx = Math.floor(Math.random() * neighbors.length);
+                let [nr, nc] = neighbors[idx];
+                if (grid[nr][nc] === 1) {
+                    grid[row + (nr - row)/2][col + (nc - col)/2] = 0;
+                    carve(nr, nc);
+                }
+                neighbors = neighbors.filter(([r, c]) => !(r === nr && c === nc));
+            }
+        }
+        carve(Math.floor(GRID_ROWS/2), Math.floor(GRID_COLS/2));
+
+        // Romper paredes al azar para crear conexiones (escapar del enemigo)
+        for (let r = 1; r < GRID_ROWS - 1; r++) {
+            for (let c = 1; c < GRID_COLS - 1; c++) {
+                if (grid[r][c] === 0) {
+                    if (c < GRID_COLS - 2 && grid[r][c+1] === 1 && grid[r][c+2] === 0) {
+                        if (Math.random() < 0.15) grid[r][c+1] = 0;
+                    }
+                    if (r < GRID_ROWS - 2 && grid[r+1][c] === 1 && grid[r+2][c] === 0) {
+                        if (Math.random() < 0.15) grid[r+1][c] = 0;
+                    }
+                }
+            }
+        }
+        return grid;
+    }
+
+    // ---- BÚSQUEDA DE CAMINOS (BFS) ----
+    function bfs(startRow, startCol, targetRow, targetCol) {
+        if (startRow === targetRow && startCol === targetCol) return [];
+        let queue = [[startRow, startCol]];
+        let visited = Array(GRID_ROWS).fill().map(() => Array(GRID_COLS).fill(false));
+        let parent = Array(GRID_ROWS).fill().map(() => Array(GRID_COLS).fill(null));
+        visited[startRow][startCol] = true;
+
+        while (queue.length > 0) {
+            let [r, c] = queue.shift();
+            let dirs = [[0, 1], [0, -1], [1, 0], [-1, 0]];
+            for (let [dr, dc] of dirs) {
+                let nr = r + dr;
+                let nc = c + dc;
+                if (nr >= 0 && nr < GRID_ROWS && nc >= 0 && nc < GRID_COLS && !visited[nr][nc] && maze[nr][nc] === 0) {
+                    visited[nr][nc] = true;
+                    parent[nr][nc] = [r, c];
+                    if (nr === targetRow && nc === targetCol) {
+                        let path = [];
+                        let curR = nr, curC = nc;
+                        while (parent[curR][curC] !== null) {
+                            path.push([curR, curC]);
+                            [curR, curC] = parent[curR][curC];
+                        }
+                        path.reverse();
+                        return path;
+                    }
+                    queue.push([nr, nc]);
+                }
+            }
+        }
+        return [];
+    }
+
+    // ---- INICIO DE NIVEL ----
+    function initLevel() {
+        resetAllKeys(); // Empezar cada nivel sin ninguna tecla "atascada"
+
+        const config = {
+            fruitCount: 4 + (currentLevel - 1) * 2,
+            enemyCount: 1 + Math.floor((currentLevel - 1) / 2),
+            speed: 2.0 + (currentLevel - 1) * 0.5
+        };
+        levelFruitTarget = config.fruitCount;
+        fruitCollected = 0;
+        fruitDisplay.innerText = `🍓 Frutas: 0 / ${levelFruitTarget}`;
+        levelDisplay.innerText = `🚩 Nivel: ${currentLevel}`;
+
+        maze = generateMaze();
+
+        let startRow = Math.floor(GRID_ROWS/2);
+        let startCol = Math.floor(GRID_COLS/2);
+        if (maze[startRow][startCol] === 1) {
+            for(let i=0; i<GRID_ROWS; i++) {
+                for(let j=0; j<GRID_COLS; j++) {
+                    if(maze[i][j] === 0) { startRow = i; startCol = j; break; }
+                }
+                if(maze[startRow][startCol] === 0) break;
+            }
+        }
+        player.x = startCol * CELL_SIZE + CELL_SIZE/2;
+        player.y = startRow * CELL_SIZE + CELL_SIZE/2;
+
+        fruits = [];
+        let freeCells = [];
+        for(let r=0; r<GRID_ROWS; r++) {
+            for(let c=0; c<GRID_COLS; c++) {
+                if(maze[r][c] === 0 && !(r === startRow && c === startCol)) {
+                    freeCells.push([r, c]);
+                }
+            }
+        }
+        for(let i=freeCells.length-1; i>0; i--) {
+            let j = Math.floor(Math.random() * (i+1));
+            [freeCells[i], freeCells[j]] = [freeCells[j], freeCells[i]];
+        }
+        let fruitCountInGrid = Math.min(config.fruitCount, freeCells.length);
+        for(let i=0; i<fruitCountInGrid; i++) {
+            let [r, c] = freeCells[i];
+            fruits.push({ x: c * CELL_SIZE + CELL_SIZE/2, y: r * CELL_SIZE + CELL_SIZE/2, size: 12 });
+        }
+
+        enemies = [];
+        let enemySpawns = [];
+        for(let i=0; i<freeCells.length; i++) {
+            let [r, c] = freeCells[i];
+            let dist = Math.abs(r - startRow) + Math.abs(c - startCol);
+            if (dist > 8) { enemySpawns.push([r, c]); }
+        }
+        for(let i=0; i<Math.min(config.enemyCount, enemySpawns.length); i++) {
+            let [r, c] = enemySpawns[i];
+            enemies.push({
+                x: c * CELL_SIZE + CELL_SIZE/2,
+                y: r * CELL_SIZE + CELL_SIZE/2,
+                size: 18,
+                speed: config.speed,
+                path: [],
+                pathTimer: 0
+            });
+        }
+        gameRunning = true;
+        overlay.style.display = 'none';
+    }
+
+    // ---- ACTUALIZACIÓN DE FÍSICA ----
+    function update() {
+        if (!gameRunning) return;
+
+        let moveSpeed = 3.5;
+        let dx = 0, dy = 0;
+        if (keys.ArrowLeft || keys.a) dx -= moveSpeed;
+        if (keys.ArrowRight || keys.d) dx += moveSpeed;
+        if (keys.ArrowUp || keys.w) dy -= moveSpeed;
+        if (keys.ArrowDown || keys.s) dy += moveSpeed;
+
+        // Sin input no hay movimiento posible: salimos de inmediato.
+        if (dx === 0 && dy === 0) {
+            checkFruitsAndEnemies();
+            return;
+        }
+
+        // Movimiento por eje separado (evita "colarse" por esquinas y hace
+        // el deslizamiento contra paredes más predecible).
+        let newX = player.x + dx;
+        let colX = Math.floor(newX / CELL_SIZE);
+        let rowNow = Math.floor(player.y / CELL_SIZE);
+        if (colX >= 0 && colX < GRID_COLS && rowNow >= 0 && rowNow < GRID_ROWS && maze[rowNow][colX] === 0) {
+            player.x = newX;
+        }
+
+        let newY = player.y + dy;
+        let rowY = Math.floor(newY / CELL_SIZE);
+        let colNow = Math.floor(player.x / CELL_SIZE);
+        if (rowY >= 0 && rowY < GRID_ROWS && colNow >= 0 && colNow < GRID_COLS && maze[rowY][colNow] === 0) {
+            player.y = newY;
+        }
+
+        checkFruitsAndEnemies();
+    }
+
+    function checkFruitsAndEnemies() {
+        for (let i = fruits.length - 1; i >= 0; i--) {
+            let f = fruits[i];
+            if (Math.hypot(player.x - f.x, player.y - f.y) < (player.size + f.size)) {
+                fruits.splice(i, 1);
+                fruitCollected++;
+                fruitDisplay.innerText = `🍓 Frutas: ${fruitCollected} / ${levelFruitTarget}`;
+            }
+        }
+
+        for (let e of enemies) {
+            e.pathTimer++;
+            let r = Math.floor(e.y / CELL_SIZE);
+            let c = Math.floor(e.x / CELL_SIZE);
+            let pr = Math.floor(player.y / CELL_SIZE);
+            let pc = Math.floor(player.x / CELL_SIZE);
+
+            if (e.pathTimer > 8 || e.path.length === 0) {
+                e.pathTimer = 0;
+                e.path = bfs(r, c, pr, pc);
+            }
+
+            if (e.path.length > 0) {
+                let [nextR, nextC] = e.path[0];
+                let targetX = nextC * CELL_SIZE + CELL_SIZE/2;
+                let targetY = nextR * CELL_SIZE + CELL_SIZE/2;
+                let dx = targetX - e.x;
+                let dy = targetY - e.y;
+                let dist = Math.hypot(dx, dy);
+                if (dist > 1) {
+                    e.x += (dx / dist) * e.speed;
+                    e.y += (dy / dist) * e.speed;
+                } else {
+                    e.path.shift();
+                }
+            }
+        }
+
+        // Colisión con enemigo
+        for (let e of enemies) {
+            if (Math.hypot(player.x - e.x, player.y - e.y) < (player.size + e.size)) {
+                gameRunning = false;
+                alert("😱 ¡Te atraparon! No te preocupes, mi amor, ¡intenta de nuevo! 💪");
+                initLevel();
+                return;
+            }
+        }
+
+        if (fruitCollected >= levelFruitTarget) {
+            gameRunning = false;
+            showLevelMessage();
+        }
+    }
+
+    // ---- DIBUJO ----
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        for (let r = 0; r < GRID_ROWS; r++) {
+            for (let c = 0; c < GRID_COLS; c++) {
+                if (maze[r][c] === 1) {
+                    ctx.fillStyle = '#5D4037';
+                    ctx.fillRect(c * CELL_SIZE, r * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+                    ctx.fillStyle = '#8D6E63';
+                    ctx.fillRect(c * CELL_SIZE + 2, r * CELL_SIZE + 2, CELL_SIZE - 4, CELL_SIZE - 4);
+                } else {
+                    ctx.fillStyle = '#FFF9C4';
+                    ctx.fillRect(c * CELL_SIZE, r * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+                }
+            }
+        }
+
+        for (let f of fruits) {
+            ctx.shadowColor = '#FF5252';
+            ctx.shadowBlur = 12;
+            ctx.fillStyle = '#FF5252';
+            ctx.beginPath(); ctx.arc(f.x, f.y, f.size, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#69F0AE';
+            ctx.shadowBlur = 0;
+            ctx.fillRect(f.x - 3, f.y - 8, 6, 4);
+        }
+
+        for (let e of enemies) {
+            ctx.shadowColor = '#9C27B0';
+            ctx.shadowBlur = 15;
+            ctx.fillStyle = '#E040FB';
+            ctx.beginPath(); ctx.arc(e.x, e.y, e.size, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = 'white';
+            ctx.shadowBlur = 0;
+            ctx.beginPath(); ctx.arc(e.x - 6, e.y - 4, 5, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(e.x + 6, e.y - 4, 5, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = 'red';
+            ctx.beginPath(); ctx.arc(e.x - 8, e.y - 2, 3, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(e.x + 4, e.y - 2, 3, 0, Math.PI*2); ctx.fill();
+        }
+        ctx.shadowBlur = 0;
+
+        if (heladoImgLoaded) {
+            ctx.drawImage(heladoImgElement, player.x - 20, player.y - 25, 40, 50);
+        } else {
+            ctx.fillStyle = '#DEB887';
+            ctx.beginPath(); ctx.moveTo(player.x - 12, player.y + 10); ctx.lineTo(player.x, player.y + 25); ctx.lineTo(player.x + 12, player.y + 10); ctx.closePath(); ctx.fill();
+            ctx.fillStyle = '#FFB6C1';
+            ctx.beginPath(); ctx.arc(player.x, player.y - 2, 16, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = 'black';
+            ctx.beginPath(); ctx.arc(player.x - 5, player.y - 5, 2.5, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(player.x + 5, player.y - 5, 2.5, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(player.x, player.y + 3, 4, 0, Math.PI, true); ctx.stroke();
+        }
+    }
+
+    // ---- INTERFAZ DE MENSAJES ----
+    function showLevelMessage() {
+        let index = Math.min(currentLevel - 1, loveMessages.length - 1);
+        msgTitle.innerText = `❤️ ¡Nivel ${currentLevel} Completado! ❤️`;
+        msgText.innerText = loveMessages[index];
+        overlay.style.display = 'flex';
+    }
+
+    function nextLevel() {
+        if (currentLevel < 10) {
+            currentLevel++;
+            initLevel();
+        } else {
+            alert("🎉 ¡FELICIDADES! Has terminado los 10 niveles. Te amo con locura, eres la mejor. 💕");
+            currentLevel = 1;
+            initLevel();
+        }
+    }
+
+    function gameLoop() {
+        update();
+        draw();
+        requestAnimationFrame(gameLoop);
+    }
+
+    // ---- CONTROLES DE TECLADO (Flechas + WASD) ----
+    document.addEventListener('keydown', (e) => {
+        const key = e.key;
+        if (key.startsWith('Arrow') || ['w','a','s','d'].includes(key.toLowerCase())) {
+            e.preventDefault(); // Evita que la página se desplace al usar flechas
+            keys[key] = true;
+        }
+    });
+    document.addEventListener('keyup', (e) => {
+        const key = e.key;
+        if (key.startsWith('Arrow') || ['w','a','s','d'].includes(key.toLowerCase())) {
+            e.preventDefault();
+            keys[key] = false;
+        }
+    });
+
+    // Red de seguridad clave: si la ventana pierde el foco (cambias de pestaña,
+    // llega una notificación, se abre otra app en el celular, etc.) el evento
+    // "keyup" puede no dispararse nunca. Sin esto, esa tecla queda "atascada"
+    // en true y el helado sigue caminando solo. Al recuperar el foco, todo
+    // vuelve a cero y el jugador tiene control total de nuevo.
+    window.addEventListener('blur', resetAllKeys);
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) resetAllKeys();
+    });
+
+    // ---- CONTROLES TÁCTILES / MOUSE (D-Pad) usando Pointer Events ----
+    // Pointer Events unifica mouse y touch, y con setPointerCapture nos
+    // aseguramos de recibir el "pointerup" incluso si el dedo/mouse se
+    // desliza fuera del botón antes de soltar — eso era lo que antes podía
+    // dejar una dirección del D-pad "atascada" en true.
+    const touchMap = {
+        'btn-up': 'ArrowUp',
+        'btn-down': 'ArrowDown',
+        'btn-left': 'ArrowLeft',
+        'btn-right': 'ArrowRight'
+    };
+
+    document.querySelectorAll('.dpad-btn').forEach(btn => {
+        const key = touchMap[btn.id];
+
+        const press = (e) => {
+            e.preventDefault();
+            if (btn.setPointerCapture && e.pointerId !== undefined) {
+                try { btn.setPointerCapture(e.pointerId); } catch (err) {}
+            }
+            keys[key] = true;
+            btn.classList.add('pressed');
+        };
+        const release = (e) => {
+            e.preventDefault();
+            keys[key] = false;
+            btn.classList.remove('pressed');
+        };
+
+        btn.addEventListener('pointerdown', press);
+        btn.addEventListener('pointerup', release);
+        btn.addEventListener('pointercancel', release);
+        // Si por alguna razón el puntero sale del botón sin soltar y sin
+        // captura activa (navegadores muy viejos), esto también libera la tecla.
+        btn.addEventListener('pointerleave', (e) => {
+            if (e.buttons === 0) release(e);
+        });
+    });
+
+    // ---- INICIAR JUEGO ----
+    initLevel();
+    gameLoop();
+</script>
+</body>
+</html>
