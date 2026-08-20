@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Para María Julieta</title>
+<style>
+  :root{
+    --cielo-1: #2b2140;
+    --cielo-2: #4a3163;
+    --cielo-3: #6b4b7a;
+    --lavanda: #cbb6e0;
+    --rosa: #f3b9c9;
+    --rosa-suave: #ffd9e3;
+    --dorado: #f0d18a;
+    --crema: #fff8f0;
+    --verde-hoja: #8fae7d;
+  }
+
+  *{ margin:0; padding:0; box-sizing:border-box; }
+
+  html,body{
+    height:100%;
+    overflow-x:hidden;
+  }
+
+  body{
+    min-height:100vh;
+    background: linear-gradient(180deg, var(--cielo-1) 0%, var(--cielo-2) 45%, var(--cielo-3) 100%);
+    font-family: 'Georgia', 'Times New Roman', serif;
+    position:relative;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding: 6vh 5vw;
+  }
+
+  /* ---------- ESTRELLAS ---------- */
+  .cielo-estrellas{
+    position:fixed;
+    inset:0;
+    overflow:hidden;
+    pointer-events:none;
+    z-index:0;
+  }
+  .estrella{
+    position:absolute;
+    background: var(--crema);
+    border-radius:50%;
+    opacity:0.7;
+    animation: parpadeo ease-in-out infinite;
+  }
+  @keyframes parpadeo{
+    0%,100%{ opacity:0.15; transform:scale(0.8); }
+    50%{ opacity:1; transform:scale(1.15); }
+  }
+  .estrella.grande{
+    box-shadow: 0 0 6px 1px rgba(255,248,240,0.7);
+  }
+
+  /* ---------- MARIPOSAS ---------- */
+  .mariposa{
+    position:fixed;
+    pointer-events:none;
+    z-index:2;
+    width:26px;
+    height:22px;
+    animation: revolotear ease-in-out infinite;
+  }
+  .mariposa svg{
+    width:100%;
+    height:100%;
+    animation: aletear 0.35s ease-in-out infinite alternate;
+    transform-origin:center;
+  }
+  @keyframes aletear{
+    from{ transform: scaleX(1); }
+    to{ transform: scaleX(0.6); }
+  }
+  @keyframes revolotear{
+    0%{ transform: translate(0,0) rotate(0deg); }
+    25%{ transform: translate(30px,-24px) rotate(8deg); }
+    50%{ transform: translate(0,-46px) rotate(-6deg); }
+    75%{ transform: translate(-30px,-24px) rotate(6deg); }
+    100%{ transform: translate(0,0) rotate(0deg); }
+  }
+
+  /* ---------- FLORES ---------- */
+  .flores-borde{
+    position:fixed;
+    left:0; right:0; bottom:0;
+    height:min(220px, 26vh);
+    z-index:1;
+    pointer-events:none;
+    overflow:hidden;
+  }
+  .flor{
+    position:absolute;
+    bottom:-10px;
+    transform-origin:bottom center;
+    animation: mecer ease-in-out infinite;
+  }
+  @keyframes mecer{
+    0%,100%{ transform: rotate(-3deg); }
+    50%{ transform: rotate(3deg); }
+  }
+
+  .flor-esquina{
+    position:fixed;
+    z-index:1;
+    pointer-events:none;
+    opacity:0.9;
+  }
+
+  /* ---------- ESCENARIO DE TEXTO (estilo letras de canción) ---------- */
+  .escenario{
+    position:fixed;
+    inset:0;
+    z-index:5;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    pointer-events:none;
+    padding: 8vh 7vw;
+  }
+
+  .eyebrow{
+    position:fixed;
+    top: 6vh;
+    left:50%;
+    transform: translateX(-50%);
+    letter-spacing:5px;
+    text-transform:uppercase;
+    font-size:0.7rem;
+    color: var(--lavanda);
+    opacity:0;
+    z-index:5;
+    transition: opacity 1.4s ease;
+    text-align:center;
+    width:90%;
+  }
+  .eyebrow.mostrar{ opacity:0.85; }
+
+  h1{
+    position:fixed;
+    top: calc(6vh + 1.6rem);
+    left:50%;
+    transform: translateX(-50%);
+    font-style:italic;
+    font-weight:400;
+    font-size: clamp(1.4rem, 5vw, 2rem);
+    color: var(--crema);
+    text-shadow: 0 0 18px rgba(240,209,138,0.5);
+    opacity:0;
+    z-index:5;
+    transition: opacity 1.4s ease;
+    text-align:center;
+    width:90%;
+  }
+  h1.mostrar{ opacity:1; }
+
+  .linea{
+    position:absolute;
+    max-width:min(760px, 88vw);
+    text-align:center;
+    font-size: clamp(1.35rem, 4.6vw, 2.3rem);
+    line-height:1.55;
+    font-style:italic;
+    color: var(--crema);
+    text-shadow: 0 0 22px rgba(203,182,224,0.45), 0 0 4px rgba(0,0,0,0.4);
+    opacity:0;
+    transform: translateY(22px) scale(0.97);
+    transition: opacity 1.1s ease, transform 1.1s ease;
+  }
+  .linea.mostrar{
+    opacity:1;
+    transform: translateY(0) scale(1);
+  }
+  .linea.salir{
+    opacity:0;
+    transform: translateY(-22px) scale(0.97);
+    transition: opacity 0.9s ease, transform 0.9s ease;
+  }
+
+  .corazon-final{
+    position:absolute;
+    text-align:center;
+    font-size:2.4rem;
+    opacity:0;
+    transform: scale(0.8);
+    transition: opacity 1.2s ease, transform 1.2s ease;
+  }
+  .corazon-final.mostrar{
+    opacity:1;
+    transform: scale(1);
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *, *::before, *::after{
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="cielo-estrellas" id="cieloEstrellas"></div>
+<div class="flores-borde" id="floresBorde"></div>
+<div id="mariposasCont"></div>
+<div id="floresEsquinas"></div>
+
+<div class="eyebrow" id="eyebrow">Un mensaje para ti</div>
+<h1 id="titulo">María Julieta</h1>
+
+<div class="escenario" id="escenario"></div>
+
+<script>
+  /* ================= ESTRELLAS ================= */
+  const cieloEstrellas = document.getElementById('cieloEstrellas');
+  for(let i=0;i<90;i++){
+    const e = document.createElement('div');
+    const tam = Math.random()*2.4+1;
+    e.className = 'estrella' + (tam>2.6 ? ' grande':'');
+    e.style.width = tam+'px';
+    e.style.height = tam+'px';
+    e.style.left = Math.random()*100+'vw';
+    e.style.top = Math.random()*70+'vh';
+    e.style.animationDuration = (2+Math.random()*3)+'s';
+    e.style.animationDelay = (Math.random()*3)+'s';
+    cieloEstrellas.appendChild(e);
+  }
+
+  /* ================= MARIPOSAS ================= */
+  const coloresAla = ['#f3b9c9','#cbb6e0','#f0d18a','#ffd9e3'];
+  function crearMariposaSVG(color){
+    return `
+    <svg viewBox="0 0 100 80" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="50" cy="40" rx="3" ry="22" fill="#4a3163"/>
+      <path d="M50 20 C20 0, 0 20, 10 45 C25 55, 45 40, 50 20 Z" fill="${color}" opacity="0.9"/>
+      <path d="M50 20 C80 0, 100 20, 90 45 C75 55, 55 40, 50 20 Z" fill="${color}" opacity="0.9"/>
+      <path d="M50 42 C28 42, 15 58, 22 68 C33 72, 46 55, 50 42 Z" fill="${color}" opacity="0.7"/>
+      <path d="M50 42 C72 42, 85 58, 78 68 C67 72, 54 55, 50 42 Z" fill="${color}" opacity="0.7"/>
+    </svg>`;
+  }
+
+  const mariposasCont = document.getElementById('mariposasCont');
+  const numMariposas = window.innerWidth < 640 ? 4 : 7;
+  for(let i=0;i<numMariposas;i++){
+    const m = document.createElement('div');
+    m.className = 'mariposa';
+    m.style.left = (5+Math.random()*90)+'vw';
+    m.style.top = (10+Math.random()*70)+'vh';
+    m.style.animationDuration = (5+Math.random()*4)+'s';
+    m.style.animationDelay = (Math.random()*3)+'s';
+    m.innerHTML = crearMariposaSVG(coloresAla[i % coloresAla.length]);
+    mariposasCont.appendChild(m);
+  }
+
+  /* ================= FLORES (borde inferior) ================= */
+  function crearFlorSVG(color, colorCentro){
+    return `
+    <svg width="46" height="60" viewBox="0 0 46 60" xmlns="http://www.w3.org/2000/svg">
+      <line x1="23" y1="60" x2="23" y2="26" stroke="#6f8f5e" stroke-width="3"/>
+      <path d="M23 40 Q10 46 8 56" stroke="#6f8f5e" stroke-width="2" fill="none"/>
+      <g transform="translate(23,16)">
+        <ellipse rx="9" ry="13" fill="${color}" transform="rotate(0)"/>
+        <ellipse rx="9" ry="13" fill="${color}" transform="rotate(72)"/>
+        <ellipse rx="9" ry="13" fill="${color}" transform="rotate(144)"/>
+        <ellipse rx="9" ry="13" fill="${color}" transform="rotate(216)"/>
+        <ellipse rx="9" ry="13" fill="${color}" transform="rotate(288)"/>
+        <circle r="6" fill="${colorCentro}"/>
+      </g>
+    </svg>`;
+  }
+
+  const floresBorde = document.getElementById('floresBorde');
+  const paletaFlores = [
+    ['#f3b9c9', '#f0d18a'],
+    ['#cbb6e0', '#fff8f0'],
+    ['#ffd9e3', '#f0d18a'],
+    ['#e0b6d6', '#fff8f0']
+  ];
+  const numFlores = Math.ceil(window.innerWidth / 70);
+  for(let i=0;i<numFlores;i++){
+    const f = document.createElement('div');
+    f.className = 'flor';
+    const paleta = paletaFlores[i % paletaFlores.length];
+    const escala = 0.6 + Math.random()*0.6;
+    f.style.left = (i*(100/numFlores))+'vw';
+    f.style.transform = `scale(${escala})`;
+    f.style.animationDuration = (3+Math.random()*2)+'s';
+    f.style.animationDelay = (Math.random()*2)+'s';
+    f.innerHTML = crearFlorSVG(paleta[0], paleta[1]);
+    floresBorde.appendChild(f);
+  }
+
+  /* ================= FLORES DE ESQUINA (decorativas, estáticas) ================= */
+  const floresEsquinas = document.getElementById('floresEsquinas');
+  const esquinas = [
+    {top:'2vh', left:'1vw', rot:-20},
+    {top:'3vh', right:'1vw', rot:20},
+  ];
+  esquinas.forEach(pos=>{
+    const div = document.createElement('div');
+    div.className = 'flor-esquina';
+    Object.keys(pos).forEach(k=>{
+      if(k!=='rot') div.style[k]=pos[k];
+    });
+    div.style.transform = `rotate(${pos.rot}deg) scale(1.1)`;
+    div.innerHTML = crearFlorSVG('#f3b9c9', '#f0d18a');
+    floresEsquinas.appendChild(div);
+  });
+
+  /* ================= MENSAJE LÍNEA POR LÍNEA ================= */
+  const LINEAS = [
+    "María Julieta, quiero que nunca olvides algo que quizá hoy necesites escuchar:",
+    "eres una persona realmente especial, mucho más de lo que a veces puedes llegar a imaginar.",
+    "Tu forma de ser, tu manera de sentir, tu sonrisa y hasta esos pequeños detalles que quizá tú consideras insignificantes pueden hacer una enorme diferencia en la vida de alguien.",
+    "Sé que hay días en los que todo pesa un poco más, en los que cuesta encontrar motivos para sonreír y parece que las cosas no salen como esperabas.",
+    "Pero incluso en esos días, quiero que recuerdes que tu existencia tiene valor, que eres importante y que hay personas que se sienten afortunadas de haberte conocido.",
+    "No permitas que un momento difícil te haga olvidar la persona maravillosa que eres.",
+    "Has superado cosas que quizá nadie conoce y, aun así, sigues avanzando.",
+    "Eso también habla de tu fortaleza.",
+    "María Julieta, mereces cariño, tranquilidad, felicidad y personas que sepan valorar el hermoso corazón que tienes.",
+    "Ojalá puedas mirarte algún día con los mismos ojos con los que te miran quienes te quieren: con admiración, cariño y orgullo.",
+    "Sigue adelante.",
+    "Todavía quedan momentos preciosos por vivir, sonrisas por compartir y sueños por cumplir.",
+    "Nunca olvides lo importante que eres."
+  ];
+
+  const escenario = document.getElementById('escenario');
+  const eyebrow = document.getElementById('eyebrow');
+  const titulo = document.getElementById('titulo');
+
+  // Calcula el tiempo de lectura de una línea según su cantidad de palabras.
+  // Velocidad de lectura estimada: ~200 palabras por minuto (320ms por palabra),
+  // con un mínimo de 2.2s y un máximo de 7.5s por línea para no hacer la espera eterna.
+  function tiempoDeLectura(texto){
+    const palabras = texto.trim().split(/\s+/).length;
+    const ms = palabras * 320;
+    return Math.min(Math.max(ms, 2200), 7500);
+  }
+
+  const TRANSICION = 900; // debe coincidir con la duración de fade-out en CSS (.linea.salir)
+
+  function mostrarLinea(idx){
+    if(idx >= LINEAS.length){
+      const corazon = document.createElement('div');
+      corazon.className = 'corazon-final';
+      corazon.textContent = '❤️';
+      escenario.appendChild(corazon);
+      requestAnimationFrame(() => corazon.classList.add('mostrar'));
+      return;
+    }
+
+    const span = document.createElement('span');
+    span.className = 'linea';
+    span.textContent = LINEAS[idx];
+    escenario.appendChild(span);
+
+    requestAnimationFrame(() => span.classList.add('mostrar'));
+
+    const duracion = tiempoDeLectura(LINEAS[idx]);
+
+    setTimeout(() => {
+      span.classList.remove('mostrar');
+      span.classList.add('salir');
+      setTimeout(() => span.remove(), TRANSICION);
+      mostrarLinea(idx + 1);
+    }, duracion);
+  }
+
+  function iniciar(){
+    eyebrow.classList.add('mostrar');
+    titulo.classList.add('mostrar');
+    setTimeout(() => {
+      eyebrow.classList.remove('mostrar');
+      titulo.classList.remove('mostrar');
+    }, 2600);
+    setTimeout(() => mostrarLinea(0), 2400);
+  }
+
+  iniciar();
+</script>
+
+</body>
+</html>
